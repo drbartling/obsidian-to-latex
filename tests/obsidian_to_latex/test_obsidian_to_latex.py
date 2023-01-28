@@ -11,10 +11,9 @@ def test_sections():
         "Start by installing.  Then run the program."
     )
     expected = (
-        R"\section{User Guide}"
         "\n"
         "This is a summary of the user guide.\n"
-        R"\subsection{Getting Started}"
+        R"\section{Getting Started}"
         "\n"
         "Start by installing.  Then run the program.\n"
     )
@@ -24,23 +23,31 @@ def test_sections():
 
 line_to_latex_params = [
     ("A Normal Line", "A Normal Line"),
-    ("# A Section Header", R"\section{A Section Header}"),
-    ("## A sub section Header", R"\subsection{A sub section Header}"),
+    ("# A Title", R""),  # Title at top of markdown becomes document title
+    ("## A section Header", R"\section{A section Header}"),
     (
-        "### A sub sub section Header",
-        R"\subsubsection{A sub sub section Header}",
+        "### A sub section Header",
+        R"\subsection{A sub section Header}",
     ),
     (
-        "#### A 'paragraph'",
+        "#### A sub sub section",
+        R"\subsubsection{A sub sub section}",
+    ),
+    (
+        "##### A 'paragraph'",
         R"\paragraph{A 'paragraph'}",
     ),
     (
-        "##### A 'subparagraph'",
-        R"\subparagraph{A 'subparagraph'}",
+        "###### A 'sub paragraph'",
+        R"\subparagraph{A 'sub paragraph'}",
     ),
     (
-        "# This section is #1",
+        "## This section is #1",
         R"\section{This section is \#1}",
+    ),
+    (
+        "Normal text is almost #1, it's #2",
+        R"Normal text is almost \#1, it's \#2",
     ),
     (
         "Normal text is almost #1, it's #2",

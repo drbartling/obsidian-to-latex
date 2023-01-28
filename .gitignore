@@ -130,7 +130,9 @@ dmypy.json
 
 # IDE specific
 .vscode/
-.obsidian/
+
+# Commiting .obsidian folder for acceptance tests
+# .obsidian/
 
 # temporary dirs
 temp/
