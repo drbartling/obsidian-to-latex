@@ -1,3 +1,4 @@
+# pylint: disable=protected-access
 from pathlib import Path
 from unittest import mock
 
@@ -7,22 +8,61 @@ import pytest
 from obsidian_to_latex import obsidian_path, process_markdown
 
 
-def test_sections():
-    text_input = (
-        "# User Guide\n"
-        "This is a summary of the user guide.\n"
-        "## Getting Started\n"
-        "Start by installing.  Then run the program."
-    )
-    expected = (
-        "\n"
-        "This is a summary of the user guide.\n"
-        R"\section{Getting Started}"
-        "\n"
-        "Start by installing.  Then run the program."
-    )
-    result = process_markdown.obsidian_to_tex(text_input)
-    assert result == expected
+@pytest.fixture(autouse=True)
+def setup_teardown():
+    process_markdown._DEPTH = 1
+    process_markdown._CODE_BLOCK = False
+    yield
+    process_markdown._DEPTH = 1
+    process_markdown._CODE_BLOCK = False
+
+
+obsidian_to_tex_params = [
+    (
+        (
+            "# User Guide\n"
+            "This is a summary of the user guide.\n"
+            "## Getting Started\n"
+            "Start by installing.  Then run the program."
+        ),
+        (
+            "\n"
+            "This is a summary of the user guide.\n"
+            R"\section{Getting Started}"
+            "\n"
+            "Start by installing.  Then run the program."
+        ),
+    ),
+    (
+        (
+            "# User Guide\n"
+            "Here's how to add a section header:\n"
+            "```markdown\n"
+            "## A Section Header\n"
+            "```\n"
+            "That looks like this:\n"
+            "## A Section Header\n"
+        ),
+        (
+            "\n"
+            "Here's how to add a section header:\n"
+            R"\begin{verbatim*}"
+            "\n"
+            R"## A Section Header"
+            "\n"
+            R"\end{verbatim*}"
+            "\n"
+            "That looks like this:\n"
+            R"\section{A Section Header}"
+        ),
+    ),
+]
+
+
+@pytest.mark.parametrize("input_text, expected", obsidian_to_tex_params)
+def test_obsidian_to_tex(input_text, expected):
+    result = process_markdown.obsidian_to_tex(input_text)
+    assert result == expected, result
 
 
 line_to_latex_params = [

@@ -6,6 +6,7 @@
 2. Barely support images
 3. Nest sections based on document inclusion depth
 4. Links within documents is just barely supported
+5. Add the minimum to barely support code blocks
 
 ### New Features
 
@@ -19,4 +20,4 @@
 
 ### Fixes
 
-1. None, no bugs in previous release.
+1. None, no bugs in previous release (based on https://github.com/kelseyhightower/nocode)

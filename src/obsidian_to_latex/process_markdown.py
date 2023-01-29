@@ -6,6 +6,7 @@ import pydantic
 from obsidian_to_latex import obsidian_path
 
 _DEPTH = 1
+_CODE_BLOCK = False
 
 
 def obsidian_to_tex(input_text: str) -> str:
@@ -16,6 +17,10 @@ def obsidian_to_tex(input_text: str) -> str:
 
 
 def line_to_tex(line: str) -> str:
+    if is_code_block_toggle(line):
+        return toggle_code_block()
+    if _CODE_BLOCK:
+        return line
     if line.startswith("#"):
         return line_to_section(line)
     if is_embedded(line):
@@ -128,6 +133,20 @@ def include_image(
     return (
         f"\\includegraphics[width={width_text},{height_text}]{{{image_path}}}"
     )
+
+
+def is_code_block_toggle(line: str) -> bool:
+    return line.startswith("```")
+
+
+def toggle_code_block() -> str:
+    global _CODE_BLOCK  # pylint: disable=global-statement
+    if not _CODE_BLOCK:
+        _CODE_BLOCK = True
+        return R"\begin{verbatim*}"
+
+    _CODE_BLOCK = False
+    return R"\end{verbatim*}"
 
 
 @pydantic.validate_arguments
