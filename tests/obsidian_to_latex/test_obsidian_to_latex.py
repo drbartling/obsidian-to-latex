@@ -1,3 +1,6 @@
+from pathlib import Path
+from unittest import mock
+
 import pytest
 
 from obsidian_to_latex import obsidian_to_latex
@@ -59,4 +62,45 @@ line_to_latex_params = [
 @pytest.mark.parametrize("input_text, expected", line_to_latex_params)
 def test_line_to_tex(input_text, expected):
     result = obsidian_to_latex.line_to_tex(input_text)
+    assert result == expected
+
+
+line_to_image_params = [
+    (
+        "![[foo.png]]",
+        Path("images/foo.png").absolute(),
+        "\\includegraphics[width=\\columnwidth,keepaspectratio]"
+        f"{{{obsidian_to_latex.format_path(Path('images/foo').absolute())}}}",
+    ),
+    (
+        "![[bar.bmp]]",
+        Path("resources/bar.bmp").absolute(),
+        "\\includegraphics[width=\\columnwidth,keepaspectratio]"
+        f"{{{obsidian_to_latex.format_path(Path('resources/bar').absolute())}}}",
+    ),
+    (
+        "![[bar.bmp|500]]",
+        Path("resources/bar.bmp").absolute(),
+        "\\includegraphics[width=250pt,keepaspectratio]"
+        f"{{{obsidian_to_latex.format_path(Path('resources/bar').absolute())}}}",
+    ),
+    (
+        "![[bar.bmp|500x100]]",
+        Path("resources/bar.bmp").absolute(),
+        "\\includegraphics[width=250pt,height=50pt]"
+        f"{{{obsidian_to_latex.format_path(Path('resources/bar').absolute())}}}",
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    "input_text, found_path, expected", line_to_image_params
+)
+def test_line_to_image(input_text, found_path, expected):
+    with mock.patch(
+        "obsidian_to_latex.obsidian_to_latex.find_file"
+    ) as mock_find:
+        obsidian_to_latex.VAULT_ROOT = Path.cwd()
+        mock_find.return_value = found_path
+        result = obsidian_to_latex.line_to_image(input_text)
     assert result == expected

@@ -5,7 +5,7 @@ license = "MIT"
 name = "obsidian_to_latex"
 readme = "README.md"
 repository = "https://github.com/drbartling/obsidian-to-latex"
-version = "0.1.0"
+version = "0.1.1"
 
 [tool.poetry.scripts]
 obsidian_to_latex = "obsidian_to_latex.obsidian_to_latex:main"

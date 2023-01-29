@@ -119,11 +119,11 @@ def include_doc(line: str, _depth={}) -> str:
     m = re.match(r"!\[\[(.*)\]\]", line)
     if not m:
         raise Exception(line)
-    file_name = m.group(1)
+    file_name = m.group(1).split("|")[0]
     if not Path(file_name).suffix:
         file_name = file_name + ".md"
     else:
-        return include_image(find_file(file_name))
+        return line_to_image(line)
 
     file = find_file(file_name)
 
@@ -150,13 +150,6 @@ def find_file(file_name: str) -> Path:
     )
 
 
-def include_image(image_path: Path) -> str:
-    image_path = image_path.with_suffix("")
-    image_path = str(image_path)
-    image_path = image_path.replace(os.path.sep, "/")
-    return f"\\includegraphics[width=\\columnwidth,keepaspectratio]{{{image_path}}}"
-
-
 def get_title(text: str) -> str:
     line = text.splitlines()[0]
     m = re.match(r"(^#*)\s*(.*)", line)
@@ -164,3 +157,36 @@ def get_title(text: str) -> str:
         return None
     title = m.group(2)
     return title
+
+
+def line_to_image(line: str) -> str:
+    m = re.match(
+        r"!\[\[([\s_a-zA-Z0-9.]*)(\|)?([0-9]+)?(x)?([0-9]+)?\]\]", line
+    )
+    if not m:
+        raise Exception(line)
+    file_name = m.group(1)
+    width = m.group(3)
+    height = m.group(5)
+    return include_image(find_file(file_name), width, height)
+
+
+@pydantic.validate_arguments
+def include_image(
+    image_path: Path, width: int | None, height: int | None
+) -> str:
+    width_text = R"\columnwidth" if width is None else f"{int(width/2)}pt"
+    height_text = (
+        R"keepaspectratio" if height is None else f"height={int(height/2)}pt"
+    )
+
+    image_path = image_path.with_suffix("")
+    image_path = str(image_path)
+    image_path = image_path.replace(os.path.sep, "/")
+    return (
+        f"\\includegraphics[width={width_text},{height_text}]{{{image_path}}}"
+    )
+
+
+def format_path(path: Path) -> str:
+    return str(path).replace(os.path.sep, "/")
