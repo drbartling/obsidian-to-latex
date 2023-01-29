@@ -7,7 +7,7 @@ from pathlib import Path
 import click
 import pydantic
 
-VAULT_ROOT = None
+from obsidian_to_latex import embedded_files, obsidian_path
 
 
 @click.command
@@ -17,8 +17,7 @@ VAULT_ROOT = None
 )
 @pydantic.validate_arguments
 def main(filename: Path):  # pragma: no cover
-    global VAULT_ROOT  # pylint: disable=global-statement
-    VAULT_ROOT = get_vault_root(filename)
+    obsidian_path.VAULT_ROOT = get_vault_root(filename)
 
     with open(filename, "r", encoding="UTF-8") as f:
         text = f.read()
@@ -123,9 +122,9 @@ def include_doc(line: str, _depth={}) -> str:
     if not Path(file_name).suffix:
         file_name = file_name + ".md"
     else:
-        return line_to_image(line)
+        return embedded_files.embed_image(line)
 
-    file = find_file(file_name)
+    file = obsidian_path.find_file(file_name)
 
     with open(file, "r", encoding="UTF-8") as f:
         text = f.read()
@@ -141,15 +140,6 @@ def include_doc(line: str, _depth={}) -> str:
     return out_text
 
 
-def find_file(file_name: str) -> Path:
-    for root, _dirs, files in os.walk(VAULT_ROOT):
-        if file_name in files:
-            return Path(os.path.join(root, file_name))
-    raise FileNotFoundError(
-        f"Unable to locate `{file_name}` under `{VAULT_ROOT}`"
-    )
-
-
 def get_title(text: str) -> str:
     line = text.splitlines()[0]
     m = re.match(r"(^#*)\s*(.*)", line)
@@ -157,36 +147,3 @@ def get_title(text: str) -> str:
         return None
     title = m.group(2)
     return title
-
-
-def line_to_image(line: str) -> str:
-    m = re.match(
-        r"!\[\[([\s_a-zA-Z0-9.]*)(\|)?([0-9]+)?(x)?([0-9]+)?\]\]", line
-    )
-    if not m:
-        raise Exception(line)
-    file_name = m.group(1)
-    width = m.group(3)
-    height = m.group(5)
-    return include_image(find_file(file_name), width, height)
-
-
-@pydantic.validate_arguments
-def include_image(
-    image_path: Path, width: int | None, height: int | None
-) -> str:
-    width_text = R"\columnwidth" if width is None else f"{int(width/2)}pt"
-    height_text = (
-        R"keepaspectratio" if height is None else f"height={int(height/2)}pt"
-    )
-
-    image_path = image_path.with_suffix("")
-    image_path = str(image_path)
-    image_path = image_path.replace(os.path.sep, "/")
-    return (
-        f"\\includegraphics[width={width_text},{height_text}]{{{image_path}}}"
-    )
-
-
-def format_path(path: Path) -> str:
-    return str(path).replace(os.path.sep, "/")
