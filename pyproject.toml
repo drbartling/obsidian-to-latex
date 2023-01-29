@@ -71,6 +71,7 @@ addopts = [
   "--cov",
   "--durations=5",
   "--ignore=acceptance_test",
+  "--cov-fail-under=100",
 ]
 testpaths = ["tests"]
 
@@ -97,7 +98,7 @@ disable = [
   "useless-suppression",
   "deprecated-pragma",
   "use-symbolic-message-instead",
-  "similarities", # Flags code in module and test as similar
+  "similarities",                 # Flags code in module and test as similar
   "missing-module-docstring",
-  "too-few-public-methods", # Disabled to allow pure dataclasses
+  "too-few-public-methods",       # Disabled to allow pure dataclasses
 ]

@@ -1,4 +1,3 @@
-import os
 import re
 import shutil
 import subprocess
@@ -7,7 +6,7 @@ from pathlib import Path
 import click
 import pydantic
 
-VAULT_ROOT = None
+from obsidian_to_latex import obsidian_path, process_markdown
 
 
 @click.command
@@ -17,12 +16,11 @@ VAULT_ROOT = None
 )
 @pydantic.validate_arguments
 def main(filename: Path):  # pragma: no cover
-    global VAULT_ROOT  # pylint: disable=global-statement
-    VAULT_ROOT = get_vault_root(filename)
+    obsidian_path.VAULT_ROOT = get_vault_root(filename)
 
     with open(filename, "r", encoding="UTF-8") as f:
         text = f.read()
-    latex = obsidian_to_tex(text)
+    latex = process_markdown.obsidian_to_tex(text)
     title = get_title(text)
     temp_dir = filename.parent / "temp"
     temp_dir.mkdir(parents=True, exist_ok=True)
@@ -65,7 +63,7 @@ def main(filename: Path):  # pragma: no cover
     shutil.copy(temp_pdf, out_pdf)
 
 
-def get_vault_root(path: Path) -> Path:
+def get_vault_root(path: Path) -> Path:  # pragma: no cover
     if (path / ".obsidian").exists():
         return path
     if path.parent == path:
@@ -73,120 +71,10 @@ def get_vault_root(path: Path) -> Path:
     return get_vault_root(path.parent)
 
 
-def obsidian_to_tex(input_text: str) -> str:
-    lines = input_text.splitlines()
-    lines = [line_to_tex(l) for l in lines]
-    text = "\n".join(lines)
-    text += "\n"
-    return text
-
-
-def line_to_tex(line: str) -> str:
-    if line.startswith("#"):
-        return line_to_section(line)
-    if line.startswith("![["):
-        return include_doc(line)
-    line = line.replace("#", R"\#")
-    line = line.replace("_", R"\_")
-    return line
-
-
-def line_to_section(line: str) -> str:
-    assert line.startswith("#"), line
-    section_lookup = {
-        2: "section",
-        3: "subsection",
-        4: "subsubsection",
-        5: "paragraph",
-        6: "subparagraph",
-    }
-    m = re.match(r"(^#*)\s*(.*)", line)
-    subsection_depth = len(m.group(1))
-    if subsection_depth not in section_lookup:
-        return ""
-    section_text = section_lookup[subsection_depth]
-    line = m.group(2)
-    line = line.replace("#", R"\#")
-    line = line.replace("_", R"\_")
-    return f"\\{section_text}{{{line}}}"
-
-
-# pylint: disable=dangerous-default-value
-def include_doc(line: str, _depth={}) -> str:
-    if not _depth:
-        _depth["depth"] = 1
-
-    m = re.match(r"!\[\[(.*)\]\]", line)
-    if not m:
-        raise Exception(line)
-    file_name = m.group(1).split("|")[0]
-    if not Path(file_name).suffix:
-        file_name = file_name + ".md"
-    else:
-        return line_to_image(line)
-
-    file = find_file(file_name)
-
-    with open(file, "r", encoding="UTF-8") as f:
-        text = f.read()
-
-    lines = text.splitlines()
-    for i, l in enumerate(lines):
-        if l.startswith("#"):
-            lines[i] = "#" * _depth["depth"] + l
-    text = "\n".join(lines)
-    _depth["depth"] += 1
-    out_text = obsidian_to_tex(text)
-    _depth["depth"] -= 1
-    return out_text
-
-
-def find_file(file_name: str) -> Path:
-    for root, _dirs, files in os.walk(VAULT_ROOT):
-        if file_name in files:
-            return Path(os.path.join(root, file_name))
-    raise FileNotFoundError(
-        f"Unable to locate `{file_name}` under `{VAULT_ROOT}`"
-    )
-
-
-def get_title(text: str) -> str:
+def get_title(text: str) -> str:  # pragma: no cover
     line = text.splitlines()[0]
     m = re.match(r"(^#*)\s*(.*)", line)
     if not m:
         return None
     title = m.group(2)
     return title
-
-
-def line_to_image(line: str) -> str:
-    m = re.match(
-        r"!\[\[([\s_a-zA-Z0-9.]*)(\|)?([0-9]+)?(x)?([0-9]+)?\]\]", line
-    )
-    if not m:
-        raise Exception(line)
-    file_name = m.group(1)
-    width = m.group(3)
-    height = m.group(5)
-    return include_image(find_file(file_name), width, height)
-
-
-@pydantic.validate_arguments
-def include_image(
-    image_path: Path, width: int | None, height: int | None
-) -> str:
-    width_text = R"\columnwidth" if width is None else f"{int(width/2)}pt"
-    height_text = (
-        R"keepaspectratio" if height is None else f"height={int(height/2)}pt"
-    )
-
-    image_path = image_path.with_suffix("")
-    image_path = str(image_path)
-    image_path = image_path.replace(os.path.sep, "/")
-    return (
-        f"\\includegraphics[width={width_text},{height_text}]{{{image_path}}}"
-    )
-
-
-def format_path(path: Path) -> str:
-    return str(path).replace(os.path.sep, "/")
