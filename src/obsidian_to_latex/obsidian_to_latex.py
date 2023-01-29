@@ -17,7 +17,7 @@ VAULT_ROOT = None
 )
 @pydantic.validate_arguments
 def main(filename: Path):  # pragma: no cover
-    global VAULT_ROOT
+    global VAULT_ROOT  # pylint: disable=global-statement
     VAULT_ROOT = get_vault_root(filename)
     print("VAULT_ROOT", VAULT_ROOT)
 
@@ -67,8 +67,11 @@ def main(filename: Path):  # pragma: no cover
 
 
 def get_vault_root(path: Path) -> Path:
+    print(path)
     if (path / ".obsidian").exists():
         return path
+    if path.parent == path:
+        raise FileNotFoundError("Unable to locate `.obsidian` folder")
     return get_vault_root(path.parent)
 
 
@@ -108,13 +111,13 @@ def line_to_section(line: str) -> str:
     return f"\\{section_text}{{{line}}}"
 
 
-def include_doc(line: str, depth=1) -> str:
+def include_doc(line: str) -> str:
     m = re.match(r"!\[\[(.*)\]\]", line)
     if not m:
         raise Exception(line)
     file_name = m.group(1) + ".md"
 
-    for root, dirs, files in os.walk(VAULT_ROOT):
+    for root, _dirs, files in os.walk(VAULT_ROOT):
         if file_name in files:
             file = Path(os.path.join(root, file_name))
             break
@@ -123,9 +126,9 @@ def include_doc(line: str, depth=1) -> str:
         text = f.read()
 
     lines = text.splitlines()
-    for i in range(len(lines)):
-        if lines[i].startswith("#"):
-            lines[i] = "#" + lines[i]
+    for l, i in enumerate(lines):
+        if l.startswith("#"):
+            lines[i] = "#" + l
     text = "\n".join(lines)
     return obsidian_to_tex(text)
 
