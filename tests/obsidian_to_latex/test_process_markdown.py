@@ -76,7 +76,7 @@ is_embedded_params = [
 @pytest.mark.parametrize("markdown_line, expected", is_embedded_params)
 def test_is_embedded(markdown_line, expected):
     result = process_markdown.is_embedded(markdown_line)
-    assert expected == result
+    assert result == expected
 
 
 is_image_params = [
@@ -92,7 +92,7 @@ is_image_params = [
 @pytest.mark.parametrize("input_text, expected", is_image_params)
 def test_is_image(input_text, expected):
     result = process_markdown.is_image(input_text)
-    assert expected == result
+    assert result == expected
 
 
 embed_markdown_params = [
@@ -132,7 +132,7 @@ def test_embed_markdown(input_text, open_reads, expected):
         ) as _open_mock:
             result = process_markdown.embed_markdown(input_text)
 
-    assert expected == result
+    assert result == expected
 
 
 @pydantic.validate_arguments
@@ -184,4 +184,33 @@ def test_embed_image(input_text, found_path, expected):
         process_markdown.VAULT_ROOT = Path.cwd()
         mock_find.return_value = found_path
         result = process_markdown.embed_image(input_text)
+    assert result == expected
+
+
+create_links_params = [
+    ("", ""),
+    (
+        R"Text with a [[#^para-ref|link]]",
+        R"Text with a \hyperref[para-ref]{link}",
+    ),
+]
+
+
+@pytest.mark.parametrize("input_text, expected", create_links_params)
+def test_create_links(input_text, expected):
+    result = process_markdown.create_links(input_text)
+    assert result == expected
+
+
+create_references_params = [
+    ("", ""),
+    ("plain text", "plain text"),
+    ("plain text ^ref-abc123", "plain text \\label{ref-abc123}"),
+    ("^project-example", "\\label{project-example}"),
+]
+
+
+@pytest.mark.parametrize("input_text, expected", create_references_params)
+def test_create_references(input_text, expected):
+    result = process_markdown.create_references(input_text)
     assert result == expected

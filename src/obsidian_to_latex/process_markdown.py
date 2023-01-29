@@ -20,6 +20,8 @@ def line_to_tex(line: str) -> str:
         return line_to_section(line)
     if is_embedded(line):
         return embed_file(line)
+    line = create_links(line)
+    line = create_references(line)
     line = line.replace("#", R"\#")
     line = line.replace("_", R"\_")
     return line
@@ -126,3 +128,16 @@ def include_image(
     return (
         f"\\includegraphics[width={width_text},{height_text}]{{{image_path}}}"
     )
+
+
+@pydantic.validate_arguments
+def create_links(line: str) -> str:
+    "[[#^para-ref|link]]"
+    return re.sub(
+        r"\[\[#\^([a-zA-Z0-9-]+)(\|)?(.+)\]\]", r"\\hyperref[\1]{\3}", line
+    )
+
+
+@pydantic.validate_arguments
+def create_references(line: str) -> str:
+    return re.sub(r"\^([0-9a-zA-Z-]+)", r"\\label{\1}", line)
