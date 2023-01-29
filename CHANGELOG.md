@@ -3,6 +3,8 @@
 ## 0.1.1
 
 1. Raise `FileNotFoundError` when unable to locate `.obsidian` folder in Windows
+2. Barely support images
+3. Nest sections based on document inclusion depth
 
 ### New Features
 

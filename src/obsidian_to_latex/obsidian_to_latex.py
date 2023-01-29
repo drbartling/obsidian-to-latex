@@ -19,7 +19,6 @@ VAULT_ROOT = None
 def main(filename: Path):  # pragma: no cover
     global VAULT_ROOT  # pylint: disable=global-statement
     VAULT_ROOT = get_vault_root(filename)
-    print("VAULT_ROOT", VAULT_ROOT)
 
     with open(filename, "r", encoding="UTF-8") as f:
         text = f.read()
@@ -67,7 +66,6 @@ def main(filename: Path):  # pragma: no cover
 
 
 def get_vault_root(path: Path) -> Path:
-    print(path)
     if (path / ".obsidian").exists():
         return path
     if path.parent == path:
@@ -86,9 +84,10 @@ def obsidian_to_tex(input_text: str) -> str:
 def line_to_tex(line: str) -> str:
     if line.startswith("#"):
         return line_to_section(line)
-    line = line.replace("#", R"\#")
     if line.startswith("![["):
         return include_doc(line)
+    line = line.replace("#", R"\#")
+    line = line.replace("_", R"\_")
     return line
 
 
@@ -108,29 +107,54 @@ def line_to_section(line: str) -> str:
     section_text = section_lookup[subsection_depth]
     line = m.group(2)
     line = line.replace("#", R"\#")
+    line = line.replace("_", R"\_")
     return f"\\{section_text}{{{line}}}"
 
 
-def include_doc(line: str) -> str:
+# pylint: disable=dangerous-default-value
+def include_doc(line: str, _depth={}) -> str:
+    if not _depth:
+        _depth["depth"] = 1
+
     m = re.match(r"!\[\[(.*)\]\]", line)
     if not m:
         raise Exception(line)
-    file_name = m.group(1) + ".md"
+    file_name = m.group(1)
+    if not Path(file_name).suffix:
+        file_name = file_name + ".md"
+    else:
+        return include_image(find_file(file_name))
 
-    for root, _dirs, files in os.walk(VAULT_ROOT):
-        if file_name in files:
-            file = Path(os.path.join(root, file_name))
-            break
+    file = find_file(file_name)
 
     with open(file, "r", encoding="UTF-8") as f:
         text = f.read()
 
     lines = text.splitlines()
-    for l, i in enumerate(lines):
+    for i, l in enumerate(lines):
         if l.startswith("#"):
-            lines[i] = "#" + l
+            lines[i] = "#" * _depth["depth"] + l
     text = "\n".join(lines)
-    return obsidian_to_tex(text)
+    _depth["depth"] += 1
+    out_text = obsidian_to_tex(text)
+    _depth["depth"] -= 1
+    return out_text
+
+
+def find_file(file_name: str) -> Path:
+    for root, _dirs, files in os.walk(VAULT_ROOT):
+        if file_name in files:
+            return Path(os.path.join(root, file_name))
+    raise FileNotFoundError(
+        f"Unable to locate `{file_name}` under `{VAULT_ROOT}`"
+    )
+
+
+def include_image(image_path: Path) -> str:
+    image_path = image_path.with_suffix("")
+    image_path = str(image_path)
+    image_path = image_path.replace(os.path.sep, "/")
+    return f"\\includegraphics[width=\\columnwidth,keepaspectratio]{{{image_path}}}"
 
 
 def get_title(text: str) -> str:
