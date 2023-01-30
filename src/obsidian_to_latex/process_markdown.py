@@ -18,7 +18,7 @@ def obsidian_to_tex(input_text: str) -> str:
 
 def line_to_tex(line: str) -> str:
     if is_code_block_toggle(line):
-        return toggle_code_block()
+        return toggle_code_block(line)
     if _CODE_BLOCK:
         return line
     if line.startswith("#"):
@@ -139,14 +139,15 @@ def is_code_block_toggle(line: str) -> bool:
     return line.startswith("```")
 
 
-def toggle_code_block() -> str:
+def toggle_code_block(line: str) -> str:
     global _CODE_BLOCK  # pylint: disable=global-statement
     if not _CODE_BLOCK:
         _CODE_BLOCK = True
-        return R"\begin{verbatim*}"
+        lang = line[3:]
+        return R"\begin{minted}" f"{{{lang}}}"
 
     _CODE_BLOCK = False
-    return R"\end{verbatim*}"
+    return R"\end{minted}"
 
 
 @pydantic.validate_arguments

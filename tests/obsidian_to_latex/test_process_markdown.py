@@ -46,11 +46,11 @@ obsidian_to_tex_params = [
         (
             "\n"
             "Here's how to add a section header:\n"
-            R"\begin{verbatim*}"
+            R"\begin{minted}{markdown}"
             "\n"
             R"## A Section Header"
             "\n"
-            R"\end{verbatim*}"
+            R"\end{minted}"
             "\n"
             "That looks like this:\n"
             R"\section{A Section Header}"

@@ -39,19 +39,13 @@ def main(filename: Path):  # pragma: no cover
     with open(temp_wrapper, "w", encoding="UTF-8") as f:
         f.write(wrapper_text)
     subprocess.run(
-        ["pdflatex", temp_wrapper, "-shell-escape", "-draftmode"],
-        check=False,
-        capture_output=False,
-        cwd=temp_wrapper.parent,
-    )
-    subprocess.run(
-        ["pdflatex", temp_wrapper, "-shell-escape", "-draftmode"],
-        check=False,
-        capture_output=False,
-        cwd=temp_wrapper.parent,
-    )
-    subprocess.run(
-        ["pdflatex", temp_wrapper, "-shell-escape"],
+        [
+            "latexmk",
+            "-pdf",
+            "-g",
+            '-latexoption="-shell-escape -file-line-error -halt-on-error"',
+            temp_wrapper,
+        ],
         check=False,
         capture_output=False,
         cwd=temp_wrapper.parent,
