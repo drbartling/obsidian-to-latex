@@ -1,5 +1,6 @@
 import re
 from pathlib import Path
+from typing import Optional
 
 import pydantic
 
@@ -121,7 +122,7 @@ def embed_image(line: str) -> str:
 
 @pydantic.validate_arguments
 def include_image(
-    image_path: Path, width: int | None, height: int | None
+    image_path: Path, width: Optional[int], height: Optional[int]
 ) -> str:
     width_text = R"\columnwidth" if width is None else f"{int(width/2)}pt"
     height_text = (
