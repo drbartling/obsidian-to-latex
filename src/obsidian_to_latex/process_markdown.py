@@ -144,10 +144,18 @@ def toggle_code_block(line: str) -> str:
     if not _CODE_BLOCK:
         _CODE_BLOCK = True
         lang = line[3:]
-        return R"\begin{minted}" f"{{{lang}}}"
+        lines = [
+            R"\begin{minipage}{\columnwidth}",
+            R"\begin{minted}[bgcolor=bg]" f"{{{lang}}}",
+        ]
+        return "\n".join(lines)
 
     _CODE_BLOCK = False
-    return R"\end{minted}"
+    lines = [
+        R"\end{minted}",
+        R"\end{minipage}",
+    ]
+    return "\n".join(lines)
 
 
 @pydantic.validate_arguments
