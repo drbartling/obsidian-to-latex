@@ -60,6 +60,10 @@ obsidian_to_tex_params = [
             R"\section{A Section Header}"
         ),
     ),
+    (
+        ("1. Here's a list\n" "2. With a second item\n"),
+        (""),
+    ),
 ]
 
 

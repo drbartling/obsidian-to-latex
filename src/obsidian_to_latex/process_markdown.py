@@ -8,6 +8,7 @@ from obsidian_to_latex import obsidian_path
 
 _DEPTH = 1
 _CODE_BLOCK = False
+_LIST_DEPTH = 0
 
 
 def obsidian_to_tex(input_text: str) -> str:
@@ -22,10 +23,12 @@ def line_to_tex(line: str) -> str:
         return toggle_code_block(line)
     if _CODE_BLOCK:
         return line
-    if line.startswith("#"):
-        return line_to_section(line)
     if is_embedded(line):
         return embed_file(line)
+    if line.startswith("#"):
+        return line_to_section(line)
+    if re.match(r"\s*[0-9]+\.", line):
+        return numbered_list_item(line)
     line = create_links(line)
     line = create_references(line)
     line = line.replace("#", R"\#")
@@ -171,3 +174,15 @@ def create_links(line: str) -> str:
 @pydantic.validate_arguments
 def create_references(line: str) -> str:
     return re.sub(r"\^([0-9a-zA-Z-]+)", r"\\label{\1}", line)
+
+
+@pydantic.validate_arguments
+def numbered_list_item(line: str) -> str:
+
+    line = re.sub(r"\s*([0-9]+\.)", r"\\item", line)
+    global _LIST_DEPTH
+    if not _LIST_DEPTH:
+        _LIST_DEPTH += 1
+        lines = [R"\begin{legal}", line]
+        line = "/n".join(lines)
+    return line
