@@ -146,6 +146,7 @@ def toggle_code_block(line: str) -> str:
         _CODE_BLOCK = True
         lang = line[3:]
         lines = [
+            R"",
             R"\begin{minipage}{\columnwidth}",
             R"\begin{minted}[bgcolor=bg]" f"{{{lang}}}",
         ]

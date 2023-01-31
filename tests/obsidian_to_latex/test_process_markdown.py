@@ -45,7 +45,7 @@ obsidian_to_tex_params = [
         ),
         (
             "\n"
-            "Here's how to add a section header:\n"
+            "Here's how to add a section header:\n\n"
             R"\begin{minipage}{\columnwidth}"
             "\n"
             R"\begin{minted}[bgcolor=bg]{markdown}"
