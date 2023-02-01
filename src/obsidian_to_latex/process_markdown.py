@@ -1,31 +1,58 @@
 import re
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional
 
 import pydantic
+from pydantic.dataclasses import dataclass
 
 from obsidian_to_latex import obsidian_path
 
 _DEPTH = 1
 _CODE_BLOCK = False
+_LIST_DEPTH: List["Indent"] = []
+
+
+@dataclass
+class Indent:
+    list_type: str
+    depth: str
 
 
 def obsidian_to_tex(input_text: str) -> str:
     lines = input_text.splitlines()
     lines = [line_to_tex(l) for l in lines]
     text = "\n".join(lines)
+    text = text + cleanup()
     return text
 
 
-def line_to_tex(line: str) -> str:
+def line_to_tex(
+    line: str,
+) -> str:
+    # pylint: disable=too-many-return-statements
+    if is_end_of_list(line):
+        lines = end_lists()
+        lines.append(line_to_tex(line))
+        line = "\n".join(lines)
+        return line
+
     if is_code_block_toggle(line):
         return toggle_code_block(line)
     if _CODE_BLOCK:
         return line
-    if line.startswith("#"):
-        return line_to_section(line)
     if is_embedded(line):
         return embed_file(line)
+    if line.startswith("#"):
+        return line_to_section(line)
+    if is_numbered_list_item(line):
+        return numbered_list_item(line)
+    if is_bullet_list_item(line):
+        return bullet_list_item(line)
+    line = sanitize_line(line)
+    return line
+
+
+def sanitize_line(line: str) -> str:
     line = create_links(line)
     line = create_references(line)
     line = line.replace("#", R"\#")
@@ -48,8 +75,7 @@ def line_to_section(line: str) -> str:
         return ""
     section_text = section_lookup[subsection_depth]
     line = m.group(2)
-    line = line.replace("#", R"\#")
-    line = line.replace("_", R"\_")
+    line = sanitize_line(line)
     return f"\\{section_text}{{{line}}}"
 
 
@@ -171,3 +197,85 @@ def create_links(line: str) -> str:
 @pydantic.validate_arguments
 def create_references(line: str) -> str:
     return re.sub(r"\^([0-9a-zA-Z-]+)", r"\\label{\1}", line)
+
+
+def is_end_of_list(line: str) -> bool:
+    return _LIST_DEPTH and not is_list(line)
+
+
+def is_list(line: str) -> bool:
+    return is_numbered_list_item(line) or is_bullet_list_item(line)
+
+
+def is_numbered_list_item(line: str) -> bool:
+    return re.match(r"\s*[0-9]+\.", line)
+
+
+@pydantic.validate_arguments
+def numbered_list_item(line: str) -> str:
+    indent, number, text = re.match(r"(\s*)([0-9])+\.\s+(.*)", line).groups()
+    sanitized_text = sanitize_line(text)
+    list_line = R"\item " + sanitized_text
+    if line_depth(indent) > total_depth():
+        _LIST_DEPTH.append(Indent("legal", indent))
+        start_num = int(number)
+        start_text = "" if start_num == 1 else f"[start={start_num}]"
+        lines = [R"\begin{legal}" + start_text, list_line]
+        list_line = "\n".join(lines)
+    if line_depth(indent) < total_depth():
+        indent = _LIST_DEPTH.pop()
+        lines = [f"\\end{{{indent.list_type}}}", list_line]
+        list_line = "\n".join(lines)
+
+    assert _LIST_DEPTH, _LIST_DEPTH
+    return list_line
+
+
+def is_bullet_list_item(line) -> bool:
+    return re.match(r"\s*-", line)
+
+
+@pydantic.validate_arguments
+def bullet_list_item(line: str) -> str:
+    indent, text = re.match(r"(\s*)-\s+(.*)", line).groups()
+    sanitized_text = sanitize_line(text)
+    list_line = R"\item " + sanitized_text
+    if line_depth(indent) > total_depth():
+        _LIST_DEPTH.append(Indent("itemize", indent))
+        lines = [R"\begin{itemize}", list_line]
+        list_line = "\n".join(lines)
+    if line_depth(indent) < total_depth():
+        indent = _LIST_DEPTH.pop()
+        lines = [f"\\end{{{indent.list_type}}}", list_line]
+        list_line = "\n".join(lines)
+
+    assert _LIST_DEPTH, _LIST_DEPTH
+    return list_line
+
+
+def line_depth(indent: str) -> int:
+    return len(indent)
+
+
+def total_depth() -> int:
+    if not _LIST_DEPTH:
+        return -1
+    return sum(line_depth(i.depth) for i in _LIST_DEPTH)
+
+
+def cleanup():
+    assert not _CODE_BLOCK, _CODE_BLOCK
+    lines = [""]
+
+    lines.extend(end_lists())
+
+    assert not _LIST_DEPTH, _LIST_DEPTH
+    return "\n".join(lines)
+
+
+def end_lists():
+    lines = []
+    while _LIST_DEPTH:
+        indent = _LIST_DEPTH.pop()
+        lines.append(f"\\end{{{indent.list_type}}}")
+    return lines

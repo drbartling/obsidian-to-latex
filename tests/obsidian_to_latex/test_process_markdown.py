@@ -2,6 +2,7 @@
 from pathlib import Path
 from unittest import mock
 
+import devtools
 import pydantic
 import pytest
 
@@ -60,12 +61,164 @@ obsidian_to_tex_params = [
             R"\section{A Section Header}"
         ),
     ),
+    (
+        ("1. Here's a list\n2. With a second item\n"),
+        (
+            R"\begin{legal}"
+            "\n"
+            R"\item Here's a list"
+            "\n"
+            R"\item With a second item"
+            "\n"
+            R"\end{legal}"
+        ),
+    ),
+    (
+        ("- Here's a list\n- With a second item\n"),
+        (
+            R"\begin{itemize}"
+            "\n"
+            R"\item Here's a list"
+            "\n"
+            R"\item With a second item"
+            "\n"
+            R"\end{itemize}"
+        ),
+    ),
+    (
+        (
+            "We're about to have a list:\n"
+            "- Here's a list\n"
+            "- With a second item\n"
+            "See list above.\n"
+        ),
+        (
+            "We're about to have a list:\n"
+            R"\begin{itemize}"
+            "\n"
+            R"\item Here's a list"
+            "\n"
+            R"\item With a second item"
+            "\n"
+            R"\end{itemize}"
+            "\n"
+            "See list above."
+        ),
+    ),
+    (
+        ("We're about to have a list:\n- Here's a list with_underscores\n"),
+        (
+            "We're about to have a list:\n"
+            R"\begin{itemize}"
+            "\n"
+            R"\item Here's a list with\_underscores"
+            "\n"
+            R"\end{itemize}"
+        ),
+    ),
+    (
+        (
+            "We're about to have a list:\n"
+            "1. Here's a list with_underscores\n"
+        ),
+        (
+            "We're about to have a list:\n"
+            R"\begin{legal}"
+            "\n"
+            R"\item Here's a list with\_underscores"
+            "\n"
+            R"\end{legal}"
+        ),
+    ),
+    (
+        (
+            "1. Install the provided license file anywhere on your system\n"
+            "2. Set `DECATECH_LICENSE_FILE` to the location of your license file\n"
+        ),
+        (
+            R"\begin{legal}"
+            "\n"
+            R"\item Install the provided license file anywhere on your system"
+            "\n"
+            R"\item Set `DECATECH\_LICENSE\_FILE` to the location of your license file"
+            "\n"
+            R"\end{legal}"
+        ),
+    ),
+    (
+        ("2. This list startswith 2\n3. And ends with 3\n"),
+        (
+            R"\begin{legal}[start=2]"
+            "\n"
+            R"\item This list startswith 2"
+            "\n"
+            R"\item And ends with 3"
+            "\n"
+            R"\end{legal}"
+        ),
+    ),
+    (
+        ("- This list has depth\n  - So deep\n"),
+        (
+            R"\begin{itemize}"
+            "\n"
+            R"\item This list has depth"
+            "\n"
+            R"\begin{itemize}"
+            "\n"
+            R"\item So deep"
+            "\n"
+            R"\end{itemize}"
+            "\n"
+            R"\end{itemize}"
+        ),
+    ),
+    (
+        ("- This list has depth\n  - So deep\n- And Shallow again"),
+        (
+            R"\begin{itemize}"
+            "\n"
+            R"\item This list has depth"
+            "\n"
+            R"\begin{itemize}"
+            "\n"
+            R"\item So deep"
+            "\n"
+            R"\end{itemize}"
+            "\n"
+            R"\item And Shallow again"
+            "\n"
+            R"\end{itemize}"
+        ),
+    ),
+    (
+        (
+            "1. This numbered list has depth\n  1. So deep\n2. And Shallow again"
+        ),
+        (
+            R"\begin{legal}"
+            "\n"
+            R"\item This numbered list has depth"
+            "\n"
+            R"\begin{legal}"
+            "\n"
+            R"\item So deep"
+            "\n"
+            R"\end{legal}"
+            "\n"
+            R"\item And Shallow again"
+            "\n"
+            R"\end{legal}"
+        ),
+    ),
 ]
 
 
 @pytest.mark.parametrize("input_text, expected", obsidian_to_tex_params)
 def test_obsidian_to_tex(input_text, expected):
     result = process_markdown.obsidian_to_tex(input_text)
+    devtools.debug(result)
+    devtools.debug(expected)
     assert result == expected, result
 
 
