@@ -146,14 +146,14 @@ obsidian_to_tex_params = [
         f"{file_line()} List: Prefix underscores with \\ in lists beyond the first item",
         (
             "1. Install the provided license file anywhere on your system\n"
-            "2. Set `DECATECH_LICENSE_FILE` to the location of your license file\n"
+            "2. Set DECATECH_LICENSE_FILE to the location of your license file\n"
         ),
         (
             R"\begin{legal}"
             "\n"
             R"\item Install the provided license file anywhere on your system"
             "\n"
-            R"\item Set `DECATECH\_LICENSE\_FILE` to the location of your license file"
+            R"\item Set DECATECH\_LICENSE\_FILE to the location of your license file"
             "\n"
             R"\end{legal}"
         ),
@@ -257,15 +257,39 @@ obsidian_to_tex_params = [
             "\\end{itemize}"
         ),
     ),
+    (
+        f"{file_line()} Link: Convert Markdown link to hyperref",
+        (
+            "You can find the reference you need [here](https://www.google.com/).\n"
+        ),
+        (
+            R"You can find the reference you need \href{https://www.google.com/}{here}."
+        ),
+    ),
+    (
+        f"{file_line()} Link: Convert multiple markdown links to hyperref in one line",
+        (
+            "You can find the reference you need [here](https://www.google.com/) "
+            "and [there](https://duckduckgo.com/).\n"
+        ),
+        (
+            R"You can find the reference you need \href{https://www.google.com/}{here} "
+            R"and \href{https://duckduckgo.com/}{there}."
+        ),
+    ),
+    (
+        f"{file_line()} Inline Code: Do not escape text in inline code snippets",
+        "You can run `obsidian_to_latex README.md` to try this out.",
+        R"You can run \verb`obsidian_to_latex README.md` to try this out.",
+    ),
 ]
 
 
 @pytest.mark.parametrize(
-    "test_name, input_text, expected", obsidian_to_tex_params
+    "_test_name, input_text, expected", obsidian_to_tex_params
 )
-def test_obsidian_to_tex(test_name, input_text, expected):
+def test_obsidian_to_tex(_test_name, input_text, expected):
     result = process_markdown.obsidian_to_tex(input_text)
-    devtools.debug(test_name)
     devtools.debug(result)
     devtools.debug(expected)
     assert result == expected, result
@@ -444,7 +468,7 @@ create_links_params = [
 
 @pytest.mark.parametrize("input_text, expected", create_links_params)
 def test_create_links(input_text, expected):
-    result = process_markdown.create_links(input_text)
+    result = process_markdown.convert_paragraph_reference(input_text)
     assert result == expected
 
 
@@ -458,5 +482,5 @@ create_references_params = [
 
 @pytest.mark.parametrize("input_text, expected", create_references_params)
 def test_create_references(input_text, expected):
-    result = process_markdown.create_references(input_text)
+    result = process_markdown.convert_paragraph_label(input_text)
     assert result == expected

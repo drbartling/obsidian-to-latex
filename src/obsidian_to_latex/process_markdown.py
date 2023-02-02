@@ -53,10 +53,11 @@ def line_to_tex(
 
 
 def sanitize_line(line: str) -> str:
-    line = create_links(line)
-    line = create_references(line)
-    line = line.replace("#", R"\#")
-    line = line.replace("_", R"\_")
+    line = convert_paragraph_reference(line)
+    line = convert_paragraph_label(line)
+    line = convert_markdown_links(line)
+    line = convert_inline_code(line)
+    line = sanitize_special_characters(line)
     return line
 
 
@@ -136,13 +137,11 @@ def is_image(line: str) -> bool:
 def embed_image(line: str) -> str:
     assert is_image(line), line
     m = re.match(
-        r"!\[\[([\s_a-zA-Z0-9.]*)(\|)?([0-9]+)?(x)?([0-9]+)?\]\]", line
+        r"!\[\[([\s_a-zA-Z0-9.]*)(?:\|)?([0-9]+)?(?:x)?([0-9]+)?\]\]", line
     )
     if not m:  # pragma: no cover
         raise Exception(line)
-    file_name = m.group(1)
-    width = m.group(3)
-    height = m.group(5)
+    file_name, width, height = m.groups()
     return include_image(obsidian_path.find_file(file_name), width, height)
 
 
@@ -187,7 +186,7 @@ def toggle_code_block(line: str) -> str:
 
 
 @pydantic.validate_arguments
-def create_links(line: str) -> str:
+def convert_paragraph_reference(line: str) -> str:
     "[[#^para-ref|link]]"
     return re.sub(
         r"\[\[#\^([a-zA-Z0-9-]+)(\|)?(.+)\]\]", r"\\hyperref[\1]{\3}", line
@@ -195,8 +194,23 @@ def create_links(line: str) -> str:
 
 
 @pydantic.validate_arguments
-def create_references(line: str) -> str:
+def convert_paragraph_label(line: str) -> str:
     return re.sub(r"\^([0-9a-zA-Z-]+)", r"\\label{\1}", line)
+
+
+@pydantic.validate_arguments
+def convert_markdown_links(line) -> str:
+    return re.sub(r"\[(.*?)\]\((.*?)\)", r"\\href{\2}{\1}", line)
+
+
+@pydantic.validate_arguments
+def convert_inline_code(line: str) -> str:
+    return re.sub(r"(`.*?`)", r"\\verb\1", line)
+
+
+@pydantic.validate_arguments
+def sanitize_special_characters(line: str) -> str:
+    return re.sub(r"([_#])(?!.*`)", r"\\\1", line)
 
 
 def is_end_of_list(line: str) -> bool:

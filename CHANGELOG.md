@@ -2,6 +2,8 @@
 1. Support nested lists indented lists
 2. Support numbered lists
 3. Support numbered lists starting from numbers other than 1
+4. Convert markdown links to clickable links
+5. Barely support inline code snippets using `back ticks`
 
 ### Fixes
 
