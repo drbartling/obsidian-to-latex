@@ -196,19 +196,47 @@ obsidian_to_tex_params = [
             "1. This numbered list has depth\n  1. So deep\n2. And Shallow again"
         ),
         (
-            R"\begin{legal}"
-            "\n"
-            R"\item This numbered list has depth"
-            "\n"
-            R"\begin{legal}"
-            "\n"
-            R"\item So deep"
-            "\n"
-            R"\end{legal}"
-            "\n"
-            R"\item And Shallow again"
-            "\n"
-            R"\end{legal}"
+            "\\begin{legal}\n"
+            "\\item This numbered list has depth\n"
+            "\\begin{legal}\n"
+            "\\item So deep\n"
+            "\\end{legal}\n"
+            "\\item And Shallow again\n"
+            "\\end{legal}"
+        ),
+    ),
+    (
+        (
+            "- Start List\n"
+            "\t- Go Deeper\n"
+            "- And back down\n"
+            "\t- Go deeper again\n"
+            "\t\t- 2. levels deep\n"
+            "\t\t\t- 3. levels deep\n"
+            "\t\t- back out\n"
+            "\t\t\t- 3 deep again\n"
+        ),
+        (
+            "\\begin{itemize}\n"
+            "\\item Start List\n"
+            "\\begin{itemize}\n"
+            "\\item Go Deeper\n"
+            "\\end{itemize}\n"
+            "\\item And back down\n"
+            "\\begin{itemize}\n"
+            "\\item Go deeper again\n"
+            "\\begin{itemize}\n"
+            "\\item 2. levels deep\n"
+            "\\begin{itemize}\n"
+            "\\item 3. levels deep\n"
+            "\\end{itemize}\n"
+            "\\item back out\n"
+            "\\begin{itemize}\n"
+            "\\item 3 deep again\n"
+            "\\end{itemize}\n"
+            "\\end{itemize}\n"
+            "\\end{itemize}\n"
+            "\\end{itemize}"
         ),
     ),
 ]

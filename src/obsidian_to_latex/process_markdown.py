@@ -217,7 +217,8 @@ def numbered_list_item(line: str) -> str:
     sanitized_text = sanitize_line(text)
     list_line = R"\item " + sanitized_text
     if line_depth(indent) > total_depth():
-        _LIST_DEPTH.append(Indent("legal", indent))
+        new_indent = indent.replace(total_indent(), "", 1)
+        _LIST_DEPTH.append(Indent("legal", new_indent))
         start_num = int(number)
         start_text = "" if start_num == 1 else f"[start={start_num}]"
         lines = [R"\begin{legal}" + start_text, list_line]
@@ -241,7 +242,8 @@ def bullet_list_item(line: str) -> str:
     sanitized_text = sanitize_line(text)
     list_line = R"\item " + sanitized_text
     if line_depth(indent) > total_depth():
-        _LIST_DEPTH.append(Indent("itemize", indent))
+        new_indent = indent.replace(total_indent(), "", 1)
+        _LIST_DEPTH.append(Indent("itemize", new_indent))
         lines = [R"\begin{itemize}", list_line]
         list_line = "\n".join(lines)
     if line_depth(indent) < total_depth():
@@ -261,6 +263,12 @@ def total_depth() -> int:
     if not _LIST_DEPTH:
         return -1
     return sum(line_depth(i.depth) for i in _LIST_DEPTH)
+
+
+def total_indent() -> str:
+    if not _LIST_DEPTH:
+        return ""
+    return "".join([i.depth for i in _LIST_DEPTH])
 
 
 def cleanup():
