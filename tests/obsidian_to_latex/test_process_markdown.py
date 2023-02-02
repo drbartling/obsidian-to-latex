@@ -1,4 +1,5 @@
 # pylint: disable=protected-access
+import inspect
 from pathlib import Path
 from unittest import mock
 
@@ -7,6 +8,10 @@ import pydantic
 import pytest
 
 from obsidian_to_latex import obsidian_path, process_markdown
+
+
+def file_line() -> str:
+    return f"{__file__}:{inspect.currentframe().f_back.f_lineno}"
 
 
 @pytest.fixture(autouse=True)
@@ -20,6 +25,7 @@ def setup_teardown():
 
 obsidian_to_tex_params = [
     (
+        f"{file_line()} Sections: Use highest section for document title",
         (
             "# User Guide\n"
             "This is a summary of the user guide.\n"
@@ -35,6 +41,7 @@ obsidian_to_tex_params = [
         ),
     ),
     (
+        f"{file_line()} Code Block: Use minted to stylize code blocks",
         (
             "# User Guide\n"
             "Here's how to add a section header:\n"
@@ -62,6 +69,7 @@ obsidian_to_tex_params = [
         ),
     ),
     (
+        f"{file_line()} List: Begin and end numbered lists with `legal`",
         ("1. Here's a list\n2. With a second item\n"),
         (
             R"\begin{legal}"
@@ -74,6 +82,7 @@ obsidian_to_tex_params = [
         ),
     ),
     (
+        f"{file_line()} List: Begin and end bullet lists with `itemize`",
         ("- Here's a list\n- With a second item\n"),
         (
             R"\begin{itemize}"
@@ -86,6 +95,7 @@ obsidian_to_tex_params = [
         ),
     ),
     (
+        f"{file_line()} List: Terminate list after last element in list",
         (
             "We're about to have a list:\n"
             "- Here's a list\n"
@@ -106,6 +116,7 @@ obsidian_to_tex_params = [
         ),
     ),
     (
+        f"{file_line()} List: Prefix underscores with \\ in lists",
         ("We're about to have a list:\n- Here's a list with_underscores\n"),
         (
             "We're about to have a list:\n"
@@ -117,6 +128,7 @@ obsidian_to_tex_params = [
         ),
     ),
     (
+        f"{file_line()} List: Prefix underscores with \\ in numbered lists",
         (
             "We're about to have a list:\n"
             "1. Here's a list with_underscores\n"
@@ -131,6 +143,7 @@ obsidian_to_tex_params = [
         ),
     ),
     (
+        f"{file_line()} List: Prefix underscores with \\ in lists beyond the first item",
         (
             "1. Install the provided license file anywhere on your system\n"
             "2. Set `DECATECH_LICENSE_FILE` to the location of your license file\n"
@@ -146,6 +159,7 @@ obsidian_to_tex_params = [
         ),
     ),
     (
+        f"{file_line()} List: Numbered lists can start with a number other than 1",
         ("2. This list startswith 2\n3. And ends with 3\n"),
         (
             R"\begin{legal}[start=2]"
@@ -158,6 +172,7 @@ obsidian_to_tex_params = [
         ),
     ),
     (
+        f"{file_line()} List: Lists can go multiple levels deep",
         ("- This list has depth\n  - So deep\n"),
         (
             R"\begin{itemize}"
@@ -174,6 +189,7 @@ obsidian_to_tex_params = [
         ),
     ),
     (
+        f"{file_line()} List: Denest a list one level",
         ("- This list has depth\n  - So deep\n- And Shallow again"),
         (
             R"\begin{itemize}"
@@ -192,6 +208,7 @@ obsidian_to_tex_params = [
         ),
     ),
     (
+        f"{file_line()} List: Denest a numbered list one level",
         (
             "1. This numbered list has depth\n  1. So deep\n2. And Shallow again"
         ),
@@ -206,6 +223,7 @@ obsidian_to_tex_params = [
         ),
     ),
     (
+        f"{file_line()} List: Nesting multiple list levels sets the indent correctly",
         (
             "- Start List\n"
             "\t- Go Deeper\n"
@@ -242,9 +260,12 @@ obsidian_to_tex_params = [
 ]
 
 
-@pytest.mark.parametrize("input_text, expected", obsidian_to_tex_params)
-def test_obsidian_to_tex(input_text, expected):
+@pytest.mark.parametrize(
+    "test_name, input_text, expected", obsidian_to_tex_params
+)
+def test_obsidian_to_tex(test_name, input_text, expected):
     result = process_markdown.obsidian_to_tex(input_text)
+    devtools.debug(test_name)
     devtools.debug(result)
     devtools.debug(expected)
     assert result == expected, result
