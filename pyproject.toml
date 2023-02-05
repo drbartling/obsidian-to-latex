@@ -101,4 +101,5 @@ disable = [
   "similarities",                 # Flags code in module and test as similar
   "missing-module-docstring",
   "too-few-public-methods",       # Disabled to allow pure dataclasses
+  "broad-exception-raised",
 ]
