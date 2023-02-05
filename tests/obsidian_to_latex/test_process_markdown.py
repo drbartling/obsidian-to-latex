@@ -457,30 +457,86 @@ def test_embed_image(input_text, found_path, expected):
     assert result == expected
 
 
-create_links_params = [
-    ("", ""),
+string_to_tex_params = [
     (
-        R"Text with a [[#^para-ref|link]]",
-        R"Text with a \hyperref[para-ref]{link}",
+        f"{file_line()} Basic: string to tex",
+        "This is simple text with nothing to process",
+        "This is simple text with nothing to process",
+    ),
+    (f"{file_line()} Escaped: Escape special characters", R"#", R"\#"),
+    (f"{file_line()} Escaped: Escape special characters", R"$", R"\$"),
+    (f"{file_line()} Escaped: Escape special characters", R"%", R"\%"),
+    (f"{file_line()} Escaped: Escape special characters", R"&", R"\&"),
+    (f"{file_line()} Escaped: Escape special characters", R"_", R"\_"),
+    (f"{file_line()} Escaped: Escape special characters", R"{", R"\{"),
+    (f"{file_line()} Escaped: Escape special characters", R"}", R"\}"),
+    (
+        f"{file_line()} Code: code snippet in text",
+        R"`This is a code snippet`",
+        R"\verb`This is a code snippet`",
+    ),
+    (
+        f"{file_line()} Code: Two code snippets",
+        R"This `line` has `two` code snippets",
+        R"This \verb`line` has \verb`two` code snippets",
+    ),
+    (
+        f"{file_line()} Code: Ignore speacial characters in code snippets",
+        R"The underscore `_` needs to be excaped in latex _",
+        R"The underscore \verb`_` needs to be excaped in latex \_",
+    ),
+    (
+        f"{file_line()} Code: Ignore special characters in code snippets",
+        R"The underscore `_` needs to be excaped in latex _",
+        R"The underscore \verb`_` needs to be excaped in latex \_",
+    ),
+    (
+        f"{file_line()} Code: Special char between two code snippets",
+        R"Running `foo` costs $20, but running `bar` costs $5.",
+        R"Running \verb`foo` costs \$20, but running \verb`bar` costs \$5.",
+    ),
+    (
+        f"{file_line()} Link: Convert markdown links",
+        R"You can find the reference you need [here](https://www.google.com/).",
+        R"You can find the reference you need \href{https://www.google.com/}{here}.",
+    ),
+    (
+        f"{file_line()} Link: Convert multiple markdown links to hyperref in one line",
+        (
+            "You can find the reference you need [here](https://www.google.com/) "
+            "and [there](https://duckduckgo.com/)."
+        ),
+        (
+            R"You can find the reference you need \href{https://www.google.com/}{here} "
+            R"and \href{https://duckduckgo.com/}{there}."
+        ),
+    ),
+    (
+        f"{file_line()} Link: Convert obsidian paragraph link",
+        ("See [[#^abc123|this section]] for more information"),
+        (R"See \hyperref[abc123]{this section} for more information"),
+    ),
+    (
+        f"{file_line()} Link: Convert obsidian paragraph reference",
+        "This is a useful paragraph ^abc123",
+        R"This is a useful paragraph \label{abc123}",
+    ),
+    (
+        f"{file_line()} Link: Reference must be at end of line",
+        "This is not a useful paragraph ^abc123, since the ref is not at the end",
+        R"This is not a useful paragraph \textasciicircum{}abc123, since the ref is not at the end",
+    ),
+    (
+        f"{file_line()} Link: An open square bracket gets escaped",
+        "See, [ this is not a link.",
+        R"See, \[ this is not a link.",
     ),
 ]
 
 
-@pytest.mark.parametrize("input_text, expected", create_links_params)
-def test_create_links(input_text, expected):
-    result = process_markdown.convert_paragraph_reference(input_text)
-    assert result == expected
-
-
-create_references_params = [
-    ("", ""),
-    ("plain text", "plain text"),
-    ("plain text ^ref-abc123", "plain text \\label{ref-abc123}"),
-    ("^project-example", "\\label{project-example}"),
-]
-
-
-@pytest.mark.parametrize("input_text, expected", create_references_params)
-def test_create_references(input_text, expected):
-    result = process_markdown.convert_paragraph_label(input_text)
-    assert result == expected
+@pytest.mark.parametrize(
+    "_test_name, input_string, expected", string_to_tex_params
+)
+def test_string_to_tex(_test_name, input_string, expected):
+    result = process_markdown.string_to_tex(input_string)
+    assert expected == result

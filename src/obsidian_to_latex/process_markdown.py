@@ -1,6 +1,7 @@
+import logging
 import re
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 import pydantic
 from pydantic.dataclasses import dataclass
@@ -10,6 +11,7 @@ from obsidian_to_latex import obsidian_path
 _DEPTH = 1
 _CODE_BLOCK = False
 _LIST_DEPTH: List["Indent"] = []
+_FILE: List[Path] = []
 
 
 @dataclass
@@ -18,14 +20,27 @@ class Indent:
     depth: str
 
 
+@pydantic.validate_arguments
 def obsidian_to_tex(input_text: str) -> str:
     lines = input_text.splitlines()
-    lines = [line_to_tex(l) for l in lines]
+    lines = [_line_to_tex(i, l) for i, l in enumerate(lines)]
     text = "\n".join(lines)
     text = text + cleanup()
     return text
 
 
+@pydantic.validate_arguments
+def _line_to_tex(lineno: int, line: str) -> str:
+    try:
+        return line_to_tex(line)
+    except Exception:  # pragma: no cover
+        logging.getLogger(__name__).error(
+            "Failed to parse `%s:%s`", _FILE[-1], lineno
+        )
+        raise
+
+
+@pydantic.validate_arguments
 def line_to_tex(
     line: str,
 ) -> str:
@@ -48,19 +63,11 @@ def line_to_tex(
         return numbered_list_item(line)
     if is_bullet_list_item(line):
         return bullet_list_item(line)
-    line = sanitize_line(line)
+    line = string_to_tex(line)
     return line
 
 
-def sanitize_line(line: str) -> str:
-    line = convert_paragraph_reference(line)
-    line = convert_paragraph_label(line)
-    line = convert_markdown_links(line)
-    line = convert_inline_code(line)
-    line = sanitize_special_characters(line)
-    return line
-
-
+@pydantic.validate_arguments
 def line_to_section(line: str) -> str:
     assert line.startswith("#"), line
     section_lookup = {
@@ -76,7 +83,7 @@ def line_to_section(line: str) -> str:
         return ""
     section_text = section_lookup[subsection_depth]
     line = m.group(2)
-    line = sanitize_line(line)
+    line = string_to_tex(line)
     return f"\\{section_text}{{{line}}}"
 
 
@@ -118,9 +125,13 @@ def embed_markdown(line: str) -> str:
         if l.startswith("#"):
             lines[i] = "#" * _DEPTH + l
     text = "\n".join(lines)
+    _FILE.append(file)
     _DEPTH += 1
-    result = obsidian_to_tex(text)
-    _DEPTH -= 1
+    try:
+        result = obsidian_to_tex(text)
+    finally:
+        _DEPTH -= 1
+        _FILE.pop()
     return result
 
 
@@ -161,10 +172,12 @@ def include_image(
     )
 
 
+@pydantic.validate_arguments
 def is_code_block_toggle(line: str) -> bool:
     return line.startswith("```")
 
 
+@pydantic.validate_arguments
 def toggle_code_block(line: str) -> str:
     global _CODE_BLOCK  # pylint: disable=global-statement
     if not _CODE_BLOCK:
@@ -186,41 +199,21 @@ def toggle_code_block(line: str) -> str:
 
 
 @pydantic.validate_arguments
-def convert_paragraph_reference(line: str) -> str:
-    "[[#^para-ref|link]]"
-    return re.sub(
-        r"\[\[#\^([a-zA-Z0-9-]+)(\|)?(.+)\]\]", r"\\hyperref[\1]{\3}", line
-    )
-
-
-@pydantic.validate_arguments
-def convert_paragraph_label(line: str) -> str:
-    return re.sub(r"\^([0-9a-zA-Z-]+)", r"\\label{\1}", line)
-
-
-@pydantic.validate_arguments
-def convert_markdown_links(line) -> str:
-    return re.sub(r"\[(.*?)\]\((.*?)\)", r"\\href{\2}{\1}", line)
-
-
-@pydantic.validate_arguments
-def convert_inline_code(line: str) -> str:
-    return re.sub(r"(`.*?`)", r"\\verb\1", line)
-
-
-@pydantic.validate_arguments
 def sanitize_special_characters(line: str) -> str:
-    return re.sub(r"([_#])(?!.*`)", r"\\\1", line)
+    return re.sub(r"([&$_#%{}])(?!.*`)", r"\\\1", line)
 
 
+@pydantic.validate_arguments
 def is_end_of_list(line: str) -> bool:
     return _LIST_DEPTH and not is_list(line)
 
 
+@pydantic.validate_arguments
 def is_list(line: str) -> bool:
     return is_numbered_list_item(line) or is_bullet_list_item(line)
 
 
+@pydantic.validate_arguments
 def is_numbered_list_item(line: str) -> bool:
     return re.match(r"\s*[0-9]+\.", line)
 
@@ -228,7 +221,7 @@ def is_numbered_list_item(line: str) -> bool:
 @pydantic.validate_arguments
 def numbered_list_item(line: str) -> str:
     indent, number, text = re.match(r"(\s*)([0-9])+\.\s+(.*)", line).groups()
-    sanitized_text = sanitize_line(text)
+    sanitized_text = string_to_tex(text)
     list_line = R"\item " + sanitized_text
     if line_depth(indent) > total_depth():
         new_indent = indent.replace(total_indent(), "", 1)
@@ -246,14 +239,15 @@ def numbered_list_item(line: str) -> str:
     return list_line
 
 
-def is_bullet_list_item(line) -> bool:
+@pydantic.validate_arguments
+def is_bullet_list_item(line: str) -> bool:
     return re.match(r"\s*-", line)
 
 
 @pydantic.validate_arguments
 def bullet_list_item(line: str) -> str:
     indent, text = re.match(r"(\s*)-\s+(.*)", line).groups()
-    sanitized_text = sanitize_line(text)
+    sanitized_text = string_to_tex(text)
     list_line = R"\item " + sanitized_text
     if line_depth(indent) > total_depth():
         new_indent = indent.replace(total_indent(), "", 1)
@@ -269,22 +263,26 @@ def bullet_list_item(line: str) -> str:
     return list_line
 
 
+@pydantic.validate_arguments
 def line_depth(indent: str) -> int:
     return len(indent)
 
 
+@pydantic.validate_arguments
 def total_depth() -> int:
     if not _LIST_DEPTH:
         return -1
     return sum(line_depth(i.depth) for i in _LIST_DEPTH)
 
 
+@pydantic.validate_arguments
 def total_indent() -> str:
     if not _LIST_DEPTH:
         return ""
     return "".join([i.depth for i in _LIST_DEPTH])
 
 
+@pydantic.validate_arguments
 def cleanup():
     assert not _CODE_BLOCK, _CODE_BLOCK
     lines = [""]
@@ -295,9 +293,81 @@ def cleanup():
     return "\n".join(lines)
 
 
+@pydantic.validate_arguments
 def end_lists():
     lines = []
     while _LIST_DEPTH:
         indent = _LIST_DEPTH.pop()
         lines.append(f"\\end{{{indent.list_type}}}")
     return lines
+
+
+@pydantic.validate_arguments
+def string_to_tex(unprocessed_text: str) -> str:
+    logging.getLogger(__name__).debug("unprocessed_text %s", unprocessed_text)
+    processed_text = ""
+
+    while unprocessed_text:
+        char = unprocessed_text[0]
+        unprocessed_text = unprocessed_text[1:]
+        if char == "`":
+            pt, unprocessed_text = split_verbatim(unprocessed_text)
+            processed_text += pt
+        elif char == "[":
+            pt, unprocessed_text = split_link(unprocessed_text)
+            processed_text += pt
+        elif char == "^":
+            pt, unprocessed_text = split_reference(unprocessed_text)
+            processed_text += pt
+        else:
+            processed_text += sanitize_special_characters(char)
+
+    return processed_text
+
+
+@pydantic.validate_arguments
+def split_verbatim(text: str) -> Tuple[str, str]:
+    processed_text = R"\verb`"
+    verb_text, unprocessed_text = re.match(r"(.*?`)(.*)", text).groups()
+    processed_text += verb_text
+    return (processed_text, unprocessed_text)
+
+
+@pydantic.validate_arguments
+def split_link(text: str) -> Tuple[str, str]:
+    return (
+        split_markdown_link(text)
+        or split_paragraph_link(text)
+        or (R"\[", text)
+    )
+
+
+@pydantic.validate_arguments
+def split_markdown_link(text: str) -> Tuple[str, str]:
+    m = re.match(r"(.*?)\]\((.*?)\)(.*)", text)
+    if not m:
+        return None
+    disp_text, link, unprocessed_text = m.groups()
+    disp_text = sanitize_special_characters(disp_text)
+    processed_text = f"\\href{{{link}}}{{{disp_text}}}"
+    return (processed_text, unprocessed_text)
+
+
+@pydantic.validate_arguments
+def split_paragraph_link(text: str) -> Tuple[str, str]:
+    m = re.match(r"\[#\^([a-zA-Z0-9-]+)\|?(.+)\]\](.*)", text)
+    if not m:
+        return None
+    link, disp_text, unprocessed_text = m.groups()
+    disp_text = sanitize_special_characters(disp_text)
+    processed_text = f"\\hyperref[{link}]{{{disp_text}}}"
+    return (processed_text, unprocessed_text)
+
+
+@pydantic.validate_arguments
+def split_reference(text: str) -> Tuple[str, str]:
+    m = re.match(r"([a-zA-Z0-9-]+)$", text)
+    if not m:
+        return R"\textasciicircum{}", text
+    ref_text = m.groups()[0]
+    return f"\\label{{{ref_text}}}", ""
