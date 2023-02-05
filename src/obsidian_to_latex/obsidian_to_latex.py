@@ -2,6 +2,7 @@ import re
 import shutil
 import subprocess
 from pathlib import Path
+from typing import Optional
 
 import click
 import pydantic
@@ -14,8 +15,13 @@ from obsidian_to_latex import obsidian_path, process_markdown
     "filename",
     type=click.Path(path_type=Path, resolve_path=True),
 )
+@click.option(
+    "-t",
+    "--template",
+    type=click.Path(path_type=Path, resolve_path=True),
+)
 @pydantic.validate_arguments
-def main(filename: Path):  # pragma: no cover
+def main(filename: Path, template: Optional[Path]):  # pragma: no cover
     obsidian_path.VAULT_ROOT = get_vault_root(filename)
 
     process_markdown._FILE.append(filename)  # pylint: disable=protected-access
@@ -30,7 +36,9 @@ def main(filename: Path):  # pragma: no cover
     with open(temp_file, "w", encoding="UTF-8") as f:
         f.write(latex)
 
-    latex_wrapper = Path(__file__).parent / "document.tex"
+    latex_wrapper = (
+        template if template else Path(__file__).parent / "document.tex"
+    )
     temp_wrapper = temp_dir / latex_wrapper.name
 
     with open(latex_wrapper, "r", encoding="UTF-8") as f:

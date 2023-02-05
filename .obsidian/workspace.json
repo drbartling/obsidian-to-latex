@@ -18,26 +18,6 @@
                 "source": false
               }
             }
-          },
-          {
-            "id": "5926a3a95aebdc74",
-            "type": "leaf",
-            "state": {
-              "type": "empty",
-              "state": {}
-            }
-          },
-          {
-            "id": "ae576543f23c8748",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "examples/right widgeting.md",
-                "mode": "source",
-                "source": false
-              }
-            }
           }
         ]
       }
@@ -168,10 +148,13 @@
   },
   "active": "53681484d1da4be4",
   "lastOpenFiles": [
-    "examples/feature_guide/Sprocketing.md",
+    "Widget XP.pdf",
     "examples/feature_guide/Widget XP.md",
-    "examples/feature_guide/Widget.md",
     "examples/feature_guide/Widgeting.md",
+    "examples/feature_guide/Widget.md",
+    "examples/feature_guide/Sprocketing.md",
+    "examples/feature_guide/right widgeting.md",
+    "examples/feature_guide/output/Widget XP.pdf",
     "examples/feature_guide/hello_widget.png",
     "examples/feature_guide/left widgeting.md",
     "examples/right widgeting.md"
