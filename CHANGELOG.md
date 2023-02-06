@@ -1,6 +1,15 @@
 # Obsidian to latex changelog
 
 ### New Features
+
+### Changes
+1. Use section depth from parent document to set section depth of embedded documents
+
+### Fixes
+
+## 0.1.2
+
+### New Features
 1. Support nested lists indented lists
 2. Support numbered lists
 3. Support numbered lists starting from numbers other than 1

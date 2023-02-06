@@ -69,6 +69,7 @@ def line_to_tex(
 
 @pydantic.validate_arguments
 def line_to_section(line: str) -> str:
+    global _DEPTH  # pylint: disable=global-statement
     assert line.startswith("#"), line
     section_lookup = {
         2: "section",
@@ -77,12 +78,13 @@ def line_to_section(line: str) -> str:
         5: "paragraph",
         6: "subparagraph",
     }
-    m = re.match(r"(^#*)\s*(.*)", line)
-    subsection_depth = len(m.group(1))
-    if subsection_depth not in section_lookup:
+    s, line = re.match(r"(#*)\s*(.*)", line).groups()
+    _DEPTH = len(s)
+
+    if _DEPTH not in section_lookup:
         return ""
-    section_text = section_lookup[subsection_depth]
-    line = m.group(2)
+    section_text = section_lookup[_DEPTH]
+
     line = string_to_tex(line)
     return f"\\{section_text}{{{line}}}"
 
@@ -109,11 +111,10 @@ def is_markdown(line: str) -> bool:
 
 
 @pydantic.validate_arguments
-def embed_markdown(line: str) -> str:
-    global _DEPTH  # pylint: disable=global-statement
-    m = re.match(r"!\[\[(.*)\]\]", line)
+def embed_markdown(embed_line: str) -> str:
+    m = re.match(r"!\[\[(.*)\]\]", embed_line)
     file_name = m.group(1)
-    assert is_markdown(line), line
+    assert is_markdown(embed_line), embed_line
 
     file_name = file_name + ".md"
     file = obsidian_path.find_file(file_name)
@@ -121,16 +122,14 @@ def embed_markdown(line: str) -> str:
     with open(file, "r", encoding="UTF-8") as f:
         text = f.read()
     lines = text.splitlines()
-    for i, l in enumerate(lines):
-        if l.startswith("#"):
-            lines[i] = "#" * _DEPTH + l
+    for i, line in enumerate(lines):
+        if line.startswith("#"):
+            lines[i] = "#" * (_DEPTH - 1) + line
     text = "\n".join(lines)
     _FILE.append(file)
-    _DEPTH += 1
     try:
         result = obsidian_to_tex(text)
     finally:
-        _DEPTH -= 1
         _FILE.pop()
     return result
 

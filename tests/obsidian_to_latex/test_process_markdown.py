@@ -369,7 +369,7 @@ embed_markdown_params = [
     (
         "![[Hello]]",
         ["# Hello\nlorem ipsum\n"],
-        "\\section{Hello}\nlorem ipsum",
+        "\nlorem ipsum",
     ),
     (
         "![[Hello]]",
@@ -377,12 +377,28 @@ embed_markdown_params = [
             "# Hello\nlorem ipsum\n![[World]]\n",
             "# World\ndolor sit\n",
         ],
-        "\\section{Hello}\nlorem ipsum\n\\subsection{World}\ndolor sit",
+        "\nlorem ipsum\n\ndolor sit",
     ),
     (
         "![[Hello]]",
         [
-            "# Hello\nlorem ipsum\n![[World.bmp]]\n",
+            "## Hello\nlorem ipsum\n![[World]]\n",
+            "# World\ndolor sit\n",
+        ],
+        "\\section{Hello}\nlorem ipsum\n\\section{World}\ndolor sit",
+    ),
+    (
+        "![[Hello]]",
+        [
+            "# Hello\n### lorem ipsum\n![[World]]\n",
+            "# World\ndolor sit\n",
+        ],
+        "\n\\subsection{lorem ipsum}\n\\subsection{World}\ndolor sit",
+    ),
+    (
+        "![[Hello]]",
+        [
+            "## Hello\nlorem ipsum\n![[World.bmp]]\n",
         ],
         "\\section{Hello}\nlorem ipsum\n"
         R"\includegraphics[width=\columnwidth,keepaspectratio]"
