@@ -2,6 +2,13 @@
 
 ### New Features
 
+### Fixes
+
+## 0.1.3
+
+### New Features
+
+### New Features
 ### Changes
 1. Use section depth from parent document to set section depth of embedded documents
 
