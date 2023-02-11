@@ -332,7 +332,7 @@ line_to_latex_params = [
 
 @pytest.mark.parametrize("input_text, expected", line_to_latex_params)
 def test_line_to_tex(input_text, expected):
-    result = process_markdown.line_to_tex(input_text)
+    result = process_markdown.line_to_tex(0, input_text)
     assert result == expected
 
 

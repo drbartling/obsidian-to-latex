@@ -9,7 +9,7 @@ from pydantic.dataclasses import dataclass
 from obsidian_to_latex import obsidian_path
 
 _DEPTH = 1
-_CODE_BLOCK = False
+_CODE_BLOCK: Optional[int] = None
 _LIST_DEPTH: List["Indent"] = []
 _FILE: List[Path] = []
 
@@ -23,16 +23,19 @@ class Indent:
 @pydantic.validate_arguments
 def obsidian_to_tex(input_text: str) -> str:
     lines = input_text.splitlines()
-    lines = [_line_to_tex(i, l) for i, l in enumerate(lines)]
+    lines = [_line_to_tex(i + 1, l) for i, l in enumerate(lines)]
     text = "\n".join(lines)
     text = text + cleanup()
     return text
 
 
 @pydantic.validate_arguments
-def _line_to_tex(lineno: int, line: str) -> str:
+def _line_to_tex(
+    lineno: int,
+    line: str,
+) -> str:
     try:
-        return line_to_tex(line)
+        return line_to_tex(lineno, line)
     except Exception:  # pragma: no cover
         logging.getLogger(__name__).error(
             "Failed to parse `%s:%s`", _FILE[-1], lineno
@@ -42,17 +45,18 @@ def _line_to_tex(lineno: int, line: str) -> str:
 
 @pydantic.validate_arguments
 def line_to_tex(
+    lineno: int,
     line: str,
 ) -> str:
     # pylint: disable=too-many-return-statements
     if is_end_of_list(line):
         lines = end_lists()
-        lines.append(line_to_tex(line))
+        lines.append(line_to_tex(lineno, line))
         line = "\n".join(lines)
         return line
 
     if is_code_block_toggle(line):
-        return toggle_code_block(line)
+        return toggle_code_block(lineno, line)
     if _CODE_BLOCK:
         return line
     if is_embedded(line):
@@ -177,10 +181,13 @@ def is_code_block_toggle(line: str) -> bool:
 
 
 @pydantic.validate_arguments
-def toggle_code_block(line: str) -> str:
+def toggle_code_block(
+    lineno: int,
+    line: str,
+) -> str:
     global _CODE_BLOCK  # pylint: disable=global-statement
     if not _CODE_BLOCK:
-        _CODE_BLOCK = True
+        _CODE_BLOCK = lineno
         lang = line[3:]
         lines = [
             R"",
@@ -189,7 +196,7 @@ def toggle_code_block(line: str) -> str:
         ]
         return "\n".join(lines)
 
-    _CODE_BLOCK = False
+    _CODE_BLOCK = None
     lines = [
         R"\end{minted}",
         R"\end{minipage}",
@@ -283,7 +290,9 @@ def total_indent() -> str:
 
 @pydantic.validate_arguments
 def cleanup():
-    assert not _CODE_BLOCK, _CODE_BLOCK
+    assert (
+        not _CODE_BLOCK
+    ), f"Reached end of file without closing code block from line {_CODE_BLOCK}"
     lines = [""]
 
     lines.extend(end_lists())
