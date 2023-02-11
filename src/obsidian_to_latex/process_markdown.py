@@ -177,7 +177,7 @@ def include_image(
 
 @pydantic.validate_arguments
 def is_code_block_toggle(line: str) -> bool:
-    return line.startswith("```")
+    return re.match(r"\s*```", line) is not None
 
 
 @pydantic.validate_arguments

@@ -69,6 +69,34 @@ obsidian_to_tex_params = [
         ),
     ),
     (
+        f"{file_line()} Code Block: Obsidian accepts leading spaces before the back ticks",
+        (
+            "# User Guide\n"
+            "Here's how to add a section header:\n"
+            "```markdown\n"
+            "## A Section Header\n"
+            " ```\n"
+            "That looks like this:\n"
+            "## A Section Header\n"
+        ),
+        (
+            "\n"
+            "Here's how to add a section header:\n\n"
+            R"\begin{minipage}{\columnwidth}"
+            "\n"
+            R"\begin{minted}[bgcolor=bg]{markdown}"
+            "\n"
+            R"## A Section Header"
+            "\n"
+            R"\end{minted}"
+            "\n"
+            R"\end{minipage}"
+            "\n"
+            "That looks like this:\n"
+            R"\section{A Section Header}"
+        ),
+    ),
+    (
         f"{file_line()} List: Begin and end numbered lists with `legal`",
         ("1. Here's a list\n2. With a second item\n"),
         (

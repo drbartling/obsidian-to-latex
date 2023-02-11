@@ -3,6 +3,7 @@
 ### New Features
 
 ### Fixes
+1. Handle code blocks that start with leading spaces
 
 ## 0.1.3
 
