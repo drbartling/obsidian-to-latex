@@ -8,17 +8,33 @@ from pydantic.dataclasses import dataclass
 
 from obsidian_to_latex import obsidian_path
 
-_DEPTH = 1
-_CODE_BLOCK: Optional[int] = None
-_MERMAID_BLOCK: Optional[int] = None
-_LIST_DEPTH: List["Indent"] = []
-_FILE: List[Path] = []
-
 
 @dataclass
 class Indent:
     list_type: str
     depth: str
+
+
+@dataclass
+class State:
+    depth: int
+    code_block: Optional[int]
+    mermaid_block: Optional[int]
+    list_depth: List[Indent]
+    file: List[Path]
+
+    @classmethod
+    def new(cls):
+        return cls(
+            depth=1,
+            code_block=None,
+            mermaid_block=None,
+            list_depth=[],
+            file=[],
+        )
+
+
+_STATE: State = State.new()
 
 
 @pydantic.validate_arguments
@@ -39,7 +55,7 @@ def _line_to_tex(
         return line_to_tex(lineno, line)
     except Exception:  # pragma: no cover
         logging.getLogger(__name__).error(
-            "Failed to parse `%s:%s`", _FILE[-1], lineno
+            "Failed to parse `%s:%s`", _STATE.file[-1], lineno
         )
         raise
 
@@ -58,9 +74,9 @@ def line_to_tex(
 
     if is_code_block_toggle(line):
         return toggle_code_block(lineno, line)
-    if _CODE_BLOCK:
+    if _STATE.code_block:
         return line
-    if _MERMAID_BLOCK:
+    if _STATE.mermaid_block:
         return line
     if is_embedded(line):
         return embed_file(line)
@@ -76,7 +92,6 @@ def line_to_tex(
 
 @pydantic.validate_arguments
 def line_to_section(line: str) -> str:
-    global _DEPTH  # pylint: disable=global-statement
     assert line.startswith("#"), line
     section_lookup = {
         2: "section",
@@ -86,11 +101,11 @@ def line_to_section(line: str) -> str:
         6: "subparagraph",
     }
     s, line = re.match(r"(#*)\s*(.*)", line).groups()
-    _DEPTH = len(s)
+    _STATE.depth = len(s)
 
-    if _DEPTH not in section_lookup:
+    if _STATE.depth not in section_lookup:
         return ""
-    section_text = section_lookup[_DEPTH]
+    section_text = section_lookup[_STATE.depth]
 
     line = string_to_tex(line)
     return f"\\{section_text}{{{line}}}"
@@ -131,13 +146,13 @@ def embed_markdown(embed_line: str) -> str:
     lines = text.splitlines()
     for i, line in enumerate(lines):
         if line.startswith("#"):
-            lines[i] = "#" * (_DEPTH - 1) + line
+            lines[i] = "#" * (_STATE.depth - 1) + line
     text = "\n".join(lines)
-    _FILE.append(file)
+    _STATE.file.append(file)
     try:
         result = obsidian_to_tex(text)
     finally:
-        _FILE.pop()
+        _STATE.file.pop()
     return result
 
 
@@ -189,13 +204,10 @@ def toggle_code_block(
     line: str,
 ) -> str:
     # pylint: disable=global-statement
-    global _CODE_BLOCK
-    global _MERMAID_BLOCK
-
-    if not _CODE_BLOCK or _MERMAID_BLOCK:
+    if not _STATE.code_block or _STATE.mermaid_block:
         lang = line[3:]
         if "mermaid" == lang:
-            _MERMAID_BLOCK = lineno
+            _STATE.mermaid_block = lineno
             lines = [
                 R"",
                 R"\begin{minipage}{\columnwidth}",
@@ -203,7 +215,7 @@ def toggle_code_block(
             ]
             return "\n".join(lines)
 
-        _CODE_BLOCK = lineno
+        _STATE.code_block = lineno
         lines = [
             R"",
             R"\begin{minipage}{\columnwidth}",
@@ -211,8 +223,8 @@ def toggle_code_block(
         ]
         return "\n".join(lines)
 
-    _CODE_BLOCK = None
-    _MERMAID_BLOCK = None
+    _STATE.code_block = None
+    _STATE.mermaid_block = None
     lines = [
         R"\end{minted}",
         R"\end{minipage}",
@@ -227,7 +239,7 @@ def sanitize_special_characters(line: str) -> str:
 
 @pydantic.validate_arguments
 def is_end_of_list(line: str) -> bool:
-    return _LIST_DEPTH and not is_list(line)
+    return _STATE.list_depth and not is_list(line)
 
 
 @pydantic.validate_arguments
@@ -247,17 +259,17 @@ def numbered_list_item(line: str) -> str:
     list_line = R"\item " + sanitized_text
     if line_depth(indent) > total_depth():
         new_indent = indent.replace(total_indent(), "", 1)
-        _LIST_DEPTH.append(Indent("legal", new_indent))
+        _STATE.list_depth.append(Indent("legal", new_indent))
         start_num = int(number)
         start_text = "" if start_num == 1 else f"[start={start_num}]"
         lines = [R"\begin{legal}" + start_text, list_line]
         list_line = "\n".join(lines)
     if line_depth(indent) < total_depth():
-        indent = _LIST_DEPTH.pop()
+        indent = _STATE.list_depth.pop()
         lines = [f"\\end{{{indent.list_type}}}", list_line]
         list_line = "\n".join(lines)
 
-    assert _LIST_DEPTH, _LIST_DEPTH
+    assert _STATE.list_depth, _STATE.list_depth
     return list_line
 
 
@@ -273,15 +285,15 @@ def bullet_list_item(line: str) -> str:
     list_line = R"\item " + sanitized_text
     if line_depth(indent) > total_depth():
         new_indent = indent.replace(total_indent(), "", 1)
-        _LIST_DEPTH.append(Indent("itemize", new_indent))
+        _STATE.list_depth.append(Indent("itemize", new_indent))
         lines = [R"\begin{itemize}", list_line]
         list_line = "\n".join(lines)
     if line_depth(indent) < total_depth():
-        indent = _LIST_DEPTH.pop()
+        indent = _STATE.list_depth.pop()
         lines = [f"\\end{{{indent.list_type}}}", list_line]
         list_line = "\n".join(lines)
 
-    assert _LIST_DEPTH, _LIST_DEPTH
+    assert _STATE.list_depth, _STATE.list_depth
     return list_line
 
 
@@ -292,36 +304,36 @@ def line_depth(indent: str) -> int:
 
 @pydantic.validate_arguments
 def total_depth() -> int:
-    if not _LIST_DEPTH:
+    if not _STATE.list_depth:
         return -1
-    return sum(line_depth(i.depth) for i in _LIST_DEPTH)
+    return sum(line_depth(i.depth) for i in _STATE.list_depth)
 
 
 @pydantic.validate_arguments
 def total_indent() -> str:
-    if not _LIST_DEPTH:
+    if not _STATE.list_depth:
         return ""
-    return "".join([i.depth for i in _LIST_DEPTH])
+    return "".join([i.depth for i in _STATE.list_depth])
 
 
 @pydantic.validate_arguments
 def cleanup():
     assert (
-        not _CODE_BLOCK
-    ), f"Reached end of file without closing code block from line {_CODE_BLOCK}"
+        not _STATE.code_block
+    ), f"Reached end of file without closing code block from line {_STATE.code_block}"
     lines = [""]
 
     lines.extend(end_lists())
 
-    assert not _LIST_DEPTH, _LIST_DEPTH
+    assert not _STATE.list_depth, _STATE.list_depth
     return "\n".join(lines)
 
 
 @pydantic.validate_arguments
 def end_lists():
     lines = []
-    while _LIST_DEPTH:
-        indent = _LIST_DEPTH.pop()
+    while _STATE.list_depth:
+        indent = _STATE.list_depth.pop()
         lines.append(f"\\end{{{indent.list_type}}}")
     return lines
 

@@ -16,11 +16,9 @@ def file_line() -> str:
 
 @pytest.fixture(autouse=True)
 def setup_teardown():
-    process_markdown._DEPTH = 1
-    process_markdown._CODE_BLOCK = False
+    process_markdown._STATE = process_markdown.State.new()
     yield
-    process_markdown._DEPTH = 1
-    process_markdown._CODE_BLOCK = False
+    process_markdown._STATE = process_markdown.State.new()
 
 
 obsidian_to_tex_params = [

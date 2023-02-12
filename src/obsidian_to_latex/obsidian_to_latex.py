@@ -24,7 +24,8 @@ from obsidian_to_latex import obsidian_path, process_markdown
 def main(filename: Path, template: Optional[Path]):  # pragma: no cover
     obsidian_path.VAULT_ROOT = get_vault_root(filename)
 
-    process_markdown._FILE.append(filename)  # pylint: disable=protected-access
+    # pylint: disable=protected-access
+    process_markdown._STATE.file.append(filename)
     with open(filename, "r", encoding="UTF-8") as f:
         text = f.read()
     latex = process_markdown.obsidian_to_tex(text)
