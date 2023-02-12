@@ -1,5 +1,7 @@
 # Obsidian to latex changelog
 
+## 0.1.4
+
 ### New Features
 1. Render mermaid diagrams in code blocks starting with ````mermaid`
 
