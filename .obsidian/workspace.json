@@ -13,7 +13,7 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "examples/feature_guide/Widgeting.md",
+                "file": "examples/feature_guide/Widget.md",
                 "mode": "source",
                 "source": false
               }
@@ -85,7 +85,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "examples/feature_guide/Widgeting.md",
+                "file": "examples/feature_guide/Widget.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -102,7 +102,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "examples/feature_guide/Widgeting.md",
+                "file": "examples/feature_guide/Widget.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -125,7 +125,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "examples/feature_guide/Widgeting.md"
+                "file": "examples/feature_guide/Widget.md"
               }
             }
           }
@@ -148,15 +148,15 @@
   },
   "active": "53681484d1da4be4",
   "lastOpenFiles": [
-    "Widget XP.pdf",
-    "examples/feature_guide/Widget XP.md",
-    "examples/feature_guide/Widgeting.md",
-    "examples/feature_guide/Widget.md",
-    "examples/feature_guide/Sprocketing.md",
-    "examples/feature_guide/right widgeting.md",
-    "examples/feature_guide/output/Widget XP.pdf",
+    "examples/feature_guide/output/Widget.pdf",
     "examples/feature_guide/hello_widget.png",
-    "examples/feature_guide/left widgeting.md",
-    "examples/right widgeting.md"
+    "examples/feature_guide/Widget XP.md",
+    "examples/feature_guide/Widget.md",
+    "examples/feature_guide/temp/document.pdf",
+    "examples/feature_guide/right widgeting.md",
+    "examples/feature_guide/Sprocketing.md",
+    "examples/feature_guide/Widgeting.md",
+    "Widget XP.pdf",
+    "examples/feature_guide/output/Widget XP.pdf"
   ]
 }

@@ -16,11 +16,13 @@ def file_line() -> str:
 
 @pytest.fixture(autouse=True)
 def setup_teardown():
-    process_markdown._DEPTH = 1
-    process_markdown._CODE_BLOCK = False
+    process_markdown.STATE = process_markdown.State.new()
+    test_file = Path.cwd() / "temp/test_file.md"
+    process_markdown.STATE.file.append(test_file)
+    temp_dir = test_file.parent / "temp"
+    process_markdown.STATE.temp_dir = temp_dir
     yield
-    process_markdown._DEPTH = 1
-    process_markdown._CODE_BLOCK = False
+    process_markdown.STATE = process_markdown.State.new()
 
 
 obsidian_to_tex_params = [
@@ -89,6 +91,32 @@ obsidian_to_tex_params = [
             R"## A Section Header"
             "\n"
             R"\end{minted}"
+            "\n"
+            R"\end{minipage}"
+            "\n"
+            "That looks like this:\n"
+            R"\section{A Section Header}"
+        ),
+    ),
+    (
+        f"{file_line()} Code Block: Mermaid code blocks are replaced by images",
+        (
+            "# User Guide\n"
+            "We can use mermaid to create nice graphics:\n"
+            "```mermaid\n"
+            "Graph LR\n"
+            "    left --> right\n"
+            "```\n"
+            "That looks like this:\n"
+            "## A Section Header\n"
+        ),
+        (
+            "\n"
+            "We can use mermaid to create nice graphics:\n\n"
+            R"\begin{minipage}{\columnwidth}"
+            "\n"
+            R"\includegraphics[width=\columnwidth,keepaspectratio]"
+            R"{test_file_3}"
             "\n"
             R"\end{minipage}"
             "\n"
@@ -314,12 +342,23 @@ obsidian_to_tex_params = [
 
 
 @pytest.mark.parametrize(
-    "_test_name, input_text, expected", obsidian_to_tex_params
+    "test_name, input_text, expected", obsidian_to_tex_params
 )
-def test_obsidian_to_tex(_test_name, input_text, expected):
-    result = process_markdown.obsidian_to_tex(input_text)
+def test_obsidian_to_tex(test_name, input_text, expected):
+    with mock.patch(
+        "obsidian_to_latex.process_markdown.process_mermaid_diagram"
+    ):
+        result = process_markdown.obsidian_to_tex(input_text)
+
+    devtools.debug(test_name)
     devtools.debug(result)
     devtools.debug(expected)
+    # r_lines = result.splitlines()
+    # e_lines = expected.splitlines()
+    # for i, line in enumerate(r_lines):
+    #     devtools.debug(r_lines[i])
+    #     devtools.debug(e_lines[i])
+    #     assert line == e_lines[i], line
     assert result == expected, result
 
 

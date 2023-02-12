@@ -1,3 +1,4 @@
+import logging
 import re
 import shutil
 import subprocess
@@ -5,6 +6,9 @@ from pathlib import Path
 from typing import Optional
 
 import click
+import colorama
+import colored_traceback
+import coloredlogs
 import pydantic
 
 from obsidian_to_latex import obsidian_path, process_markdown
@@ -22,17 +26,24 @@ from obsidian_to_latex import obsidian_path, process_markdown
 )
 @pydantic.validate_arguments
 def main(filename: Path, template: Optional[Path]):  # pragma: no cover
+    colorama.init()
+    colored_traceback.add_hook()
+    coloredlogs.install(level="INFO")
+
     obsidian_path.VAULT_ROOT = get_vault_root(filename)
 
-    process_markdown._FILE.append(filename)  # pylint: disable=protected-access
+    # pylint: disable=protected-access
+    process_markdown.STATE.file.append(filename)
     with open(filename, "r", encoding="UTF-8") as f:
         text = f.read()
-    latex = process_markdown.obsidian_to_tex(text)
     title = get_title(text)
     temp_dir = filename.parent / "temp"
     temp_dir.mkdir(parents=True, exist_ok=True)
+    process_markdown.STATE.temp_dir = temp_dir
+    process_markdown.STATE.file.append(filename)
     temp_file = temp_dir / "body.tex"
 
+    latex = process_markdown.obsidian_to_tex(text)
     with open(temp_file, "w", encoding="UTF-8") as f:
         f.write(latex)
 
@@ -63,7 +74,12 @@ def main(filename: Path, template: Optional[Path]):  # pragma: no cover
     out_dir = filename.parent / "output"
     out_dir.mkdir(parents=True, exist_ok=True)
     out_pdf = (out_dir / filename.name).with_suffix(".pdf")
-    shutil.copy(temp_pdf, out_pdf)
+    try:
+        shutil.copy(temp_pdf, out_pdf)
+    except FileNotFoundError:
+        msg = f"Failed to create PDF: `{out_pdf}`"
+        logging.getLogger(__name__).error(msg)
+        raise FileNotFoundError(msg) from None
 
 
 def get_vault_root(path: Path) -> Path:  # pragma: no cover

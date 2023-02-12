@@ -1,6 +1,7 @@
 # Obsidian to latex changelog
 
 ### New Features
+1. Render mermaid diagrams in code blocks starting with ````mermaid`
 
 ### Fixes
 1. Handle code blocks that start with leading spaces
