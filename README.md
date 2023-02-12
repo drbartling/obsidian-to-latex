@@ -2,6 +2,11 @@
 
 This utility attempts to make it easy to convert markdown documents written using obsidian into PDFs.
 
+## Requirements
+
+- latex
+- mermaid
+
 ## Getting Started
 
 This project uses python [poetry](https://python-poetry.org/).  Follow the [intallation instructions](https://python-poetry.org/docs/#installation) for poetry.

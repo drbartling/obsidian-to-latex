@@ -10,6 +10,7 @@ from obsidian_to_latex import obsidian_path
 
 _DEPTH = 1
 _CODE_BLOCK: Optional[int] = None
+_MERMAID_BLOCK: Optional[int] = None
 _LIST_DEPTH: List["Indent"] = []
 _FILE: List[Path] = []
 
@@ -58,6 +59,8 @@ def line_to_tex(
     if is_code_block_toggle(line):
         return toggle_code_block(lineno, line)
     if _CODE_BLOCK:
+        return line
+    if _MERMAID_BLOCK:
         return line
     if is_embedded(line):
         return embed_file(line)
@@ -185,10 +188,22 @@ def toggle_code_block(
     lineno: int,
     line: str,
 ) -> str:
-    global _CODE_BLOCK  # pylint: disable=global-statement
-    if not _CODE_BLOCK:
-        _CODE_BLOCK = lineno
+    # pylint: disable=global-statement
+    global _CODE_BLOCK
+    global _MERMAID_BLOCK
+
+    if not _CODE_BLOCK or _MERMAID_BLOCK:
         lang = line[3:]
+        if "mermaid" == lang:
+            _MERMAID_BLOCK = lineno
+            lines = [
+                R"",
+                R"\begin{minipage}{\columnwidth}",
+                R"\begin{minted}[bgcolor=bg]",
+            ]
+            return "\n".join(lines)
+
+        _CODE_BLOCK = lineno
         lines = [
             R"",
             R"\begin{minipage}{\columnwidth}",
@@ -197,6 +212,7 @@ def toggle_code_block(
         return "\n".join(lines)
 
     _CODE_BLOCK = None
+    _MERMAID_BLOCK = None
     lines = [
         R"\end{minted}",
         R"\end{minipage}",
