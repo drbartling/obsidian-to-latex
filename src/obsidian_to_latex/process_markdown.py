@@ -160,7 +160,7 @@ def embed_markdown(embed_line: str) -> str:
         result = obsidian_to_tex(text)
     finally:
         STATE.file.pop()
-    return result
+    return file_label(file) + result
 
 
 @pydantic.validate_arguments
@@ -253,10 +253,10 @@ def process_mermaid_diagram():  # pragma: no cover
     mmd_file: Path = (
         STATE.temp_dir / f"{STATE.file[-1].stem}_{STATE.mermaid_block}.mmd"
     )
-    img_file = mmd_file.with_suffix(".png")
+    img_file = mmd_file.with_suffix(".pdf")
     with open(mmd_file, "w", encoding="UTF-8") as f:
         f.write(STATE.code_buffer)
-    cmd = ["mmdc", "-i", mmd_file, "-o", img_file]
+    cmd = ["mmdc", "-i", mmd_file, "-o", img_file, "--pdfFit"]
     subprocess.run(cmd, shell=True, check=True)
 
 
@@ -401,6 +401,7 @@ def split_verbatim(text: str) -> Tuple[str, str]:
 def split_link(text: str) -> Tuple[str, str]:
     return (
         split_markdown_link(text)
+        or split_document_link(text)
         or split_paragraph_link(text)
         or (R"\[", text)
     )
@@ -414,6 +415,20 @@ def split_markdown_link(text: str) -> Tuple[str, str]:
     disp_text, link, unprocessed_text = m.groups()
     disp_text = sanitize_special_characters(disp_text)
     processed_text = f"\\href{{{link}}}{{{disp_text}}}"
+    return (processed_text, unprocessed_text)
+
+
+@pydantic.validate_arguments
+def split_document_link(text: str) -> Tuple[str, str]:
+    m = re.match(r"\[([a-zA-Z0-9-\s]+)\|?(.+)?\]\](.*)", text)
+    if not m:
+        return None
+    doc_name, disp_text, unprocessed_text = m.groups()
+    doc_ref = file_ref_label(obsidian_path.find_file(doc_name + ".md"))
+    disp_text = (
+        sanitize_special_characters(disp_text) if disp_text else doc_name
+    )
+    processed_text = f"\\hyperref[{doc_ref}]{{{disp_text}}}"
     return (processed_text, unprocessed_text)
 
 
@@ -435,3 +450,13 @@ def split_reference(text: str) -> Tuple[str, str]:
         return R"\textasciicircum{}", text
     ref_text = m.groups()[0]
     return f"\\label{{{ref_text}}}", ""
+
+
+@pydantic.validate_arguments
+def file_label(file_path: Path) -> str:
+    return f"\\label{{{file_ref_label(file_path)}}}"
+
+
+@pydantic.validate_arguments
+def file_ref_label(file_path: Path) -> str:
+    return "file_" + file_path.name.replace(".", "_")

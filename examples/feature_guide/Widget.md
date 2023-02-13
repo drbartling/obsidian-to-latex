@@ -1,5 +1,7 @@
 # Widget
 
+Now with [[right widgeting]]!
+
 ## Section #1
 
 ### SubSection
@@ -18,4 +20,5 @@ graph
 	widget --> rw[right widgeting]
 ```
 
+## Widgeting
 ![[Widgeting]]

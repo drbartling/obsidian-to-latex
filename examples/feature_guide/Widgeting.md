@@ -1,4 +1,3 @@
-# Widgeting
 Standard widgeting widgets to the left and widgets to the right
 
 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis sit amet tellus non sapien maximus dapibus pharetra id augue. Maecenas ornare placerat neque quis hendrerit. Etiam vel lacinia nibh, a pretium nunc. Proin aliquet tellus in sapien iaculis, ut auctor nulla accumsan. Pellentesque viverra nisi at mauris venenatis, et volutpat elit varius. Donec efficitur accumsan diam, sed fringilla velit venenatis et. Nunc vitae viverra elit. Etiam mollis in sapien vitae elementum. Nam convallis malesuada lorem a condimentum. Phasellus justo libero, malesuada eget risus et, eleifend varius quam. Donec ornare eget diam ac ultricies. Maecenas tincidunt lacinia dictum. Curabitur non dolor quis purus scelerisque placerat sed nec mauris. Aliquam bibendum nunc sit amet rhoncus lobortis.

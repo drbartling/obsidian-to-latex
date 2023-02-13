@@ -1,5 +1,10 @@
 # Obsidian to latex changelog
 
+## 0.1.5
+
+### New Features
+1. Link to other embedded documents
+
 ## 0.1.4
 
 ### New Features

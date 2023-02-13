@@ -353,12 +353,6 @@ def test_obsidian_to_tex(test_name, input_text, expected):
     devtools.debug(test_name)
     devtools.debug(result)
     devtools.debug(expected)
-    # r_lines = result.splitlines()
-    # e_lines = expected.splitlines()
-    # for i, line in enumerate(r_lines):
-    #     devtools.debug(r_lines[i])
-    #     devtools.debug(e_lines[i])
-    #     assert line == e_lines[i], line
     assert result == expected, result
 
 
@@ -434,56 +428,83 @@ def test_is_image(input_text, expected):
 
 embed_markdown_params = [
     (
+        f"{file_line()} Embedding the top file removes the title",
         "![[Hello]]",
         ["# Hello\nlorem ipsum\n"],
-        "\nlorem ipsum",
+        "\\label{file_embedded_document_md}\nlorem ipsum",
     ),
     (
+        f"{file_line()} Remove the title level header from all embedded docs",
         "![[Hello]]",
         [
             "# Hello\nlorem ipsum\n![[World]]\n",
             "# World\ndolor sit\n",
         ],
-        "\nlorem ipsum\n\ndolor sit",
+        "\\label{file_embedded_document_md}\n"
+        "lorem ipsum\n"
+        "\\label{file_embedded_document_md}\n"
+        "dolor sit",
     ),
     (
+        f"{file_line()} First level header match header from higher doc",
         "![[Hello]]",
         [
             "## Hello\nlorem ipsum\n![[World]]\n",
             "# World\ndolor sit\n",
         ],
-        "\\section{Hello}\nlorem ipsum\n\\section{World}\ndolor sit",
+        "\\label{file_embedded_document_md}\\section{Hello}\n"
+        "lorem ipsum\n"
+        "\\label{file_embedded_document_md}\\section{World}\n"
+        "dolor sit",
     ),
     (
+        f"{file_line()} First level header match header from higher doc",
         "![[Hello]]",
         [
             "# Hello\n### lorem ipsum\n![[World]]\n",
             "# World\ndolor sit\n",
         ],
-        "\n\\subsection{lorem ipsum}\n\\subsection{World}\ndolor sit",
+        "\\label{file_embedded_document_md}\n"
+        "\\subsection{lorem ipsum}\n"
+        "\\label{file_embedded_document_md}\\subsection{World}\n"
+        "dolor sit",
     ),
     (
+        f"{file_line()} Embedding images",
         "![[Hello]]",
         [
             "## Hello\nlorem ipsum\n![[World.bmp]]\n",
         ],
-        "\\section{Hello}\nlorem ipsum\n"
+        "\\label{file_embedded_document_md}\\section{Hello}\n"
+        "lorem ipsum\n"
         R"\includegraphics[width=\columnwidth,keepaspectratio]"
-        f"{{{obsidian_path.format_path(Path('World').absolute())}}}",
+        f"{{{obsidian_path.format_path(Path('embedded_document').absolute())}}}",
+    ),
+    (
+        f"{file_line()} Reference an embedded file",
+        "![[Hello]]",
+        [
+            "lorem ipsum[[embedded_document]]\n",
+            "dolar set",
+        ],
+        "\\label{file_embedded_document_md}lorem ipsum\\hyperref[file_embedded_document_md]{\\_document}",
     ),
 ]
 
 
 @pytest.mark.parametrize(
-    "input_text, open_reads, expected", embed_markdown_params
+    "test_name, input_text, open_reads, expected", embed_markdown_params
 )
-def test_embed_markdown(input_text, open_reads, expected):
+def test_embed_markdown(test_name, input_text, open_reads, expected):
     with mock.patch("obsidian_to_latex.obsidian_path.find_file") as mock_find:
-        mock_find.return_value = Path("World.md").absolute()
+        mock_find.return_value = Path("embedded_document.md").absolute()
         with mock.patch(
             "builtins.open", get_mock_open(open_reads)
         ) as _open_mock:
             result = process_markdown.embed_markdown(input_text)
+    devtools.debug(test_name)
+    devtools.debug(result)
+    devtools.debug(expected)
 
     assert result == expected
 
@@ -622,4 +643,15 @@ string_to_tex_params = [
 )
 def test_string_to_tex(_test_name, input_string, expected):
     result = process_markdown.string_to_tex(input_string)
+    assert expected == result
+
+
+file_ref_label_params = [
+    (Path("hello.md").resolve(), "file_hello_md"),
+]
+
+
+@pytest.mark.parametrize("path_to_file, expected", file_ref_label_params)
+def test_file_ref_label(path_to_file, expected):
+    result = process_markdown.file_ref_label(path_to_file)
     assert expected == result
