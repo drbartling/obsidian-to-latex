@@ -1,5 +1,7 @@
 # Obsidian to latex changelog
 
+## 0.1.6
+
 ### New Features
 1. Text formatting
     1. Support **bold text**
