@@ -1,5 +1,11 @@
 # Obsidian to latex changelog
 
+### New Features
+1. Text formatting
+    1. Support **bold text**
+    2. Support *Italic text*
+    3. Support ***Bold and Italic text***
+
 ### Changes
 1. Obsidian to latex will search for `.git` as well as `.obsidian` for the vault root.
 
@@ -20,7 +26,6 @@
 
 ### New Features
 
-### New Features
 ### Changes
 1. Use section depth from parent document to set section depth of embedded documents
 

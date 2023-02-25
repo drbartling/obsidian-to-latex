@@ -338,6 +338,21 @@ obsidian_to_tex_params = [
         "You can run `obsidian_to_latex README.md` to try this out.",
         R"You can run \verb`obsidian_to_latex README.md` to try this out.",
     ),
+    (
+        f"{file_line()} Formatting: Bold Text",
+        "You can make **bold** text **with_underscores**!",
+        R"You can make \textbf{bold} text \textbf{with\_underscores}!",
+    ),
+    (
+        f"{file_line()} Formatting: Italic Text",
+        "You can make *italic* text *with_underscores*!",
+        R"You can make \textit{italic} text \textit{with\_underscores}!",
+    ),
+    (
+        f"{file_line()} Formatting: Bold italic Text",
+        "You can make ***bold and italic*** text ***with_underscores***!",
+        R"You can make \textbf{\textit{bold and italic}} text \textbf{\textit{with\_underscores}}!",
+    ),
 ]
 
 

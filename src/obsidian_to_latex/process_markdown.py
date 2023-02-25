@@ -377,6 +377,9 @@ def string_to_tex(unprocessed_text: str) -> str:
         if char == "`":
             pt, unprocessed_text = split_verbatim(unprocessed_text)
             processed_text += pt
+        elif char == "*":
+            pt, unprocessed_text = split_formatted(unprocessed_text)
+            processed_text += pt
         elif char == "[":
             pt, unprocessed_text = split_link(unprocessed_text)
             processed_text += pt
@@ -394,6 +397,35 @@ def split_verbatim(text: str) -> Tuple[str, str]:
     processed_text = R"\verb`"
     verb_text, unprocessed_text = re.match(r"(.*?`)(.*)", text).groups()
     processed_text += verb_text
+    return (processed_text, unprocessed_text)
+
+
+@pydantic.validate_arguments
+def split_formatted(text: str) -> Tuple[str, str]:
+    if text.startswith("*"):
+        return split_bold(text)
+    return split_italics(text)
+
+
+def split_bold(text: str) -> Tuple[str, str]:
+    processed_text = R"\textbf{"
+    bold_text, unprocessed_text = re.match(
+        r"\*(.*?\**)\*\*(.*)", text
+    ).groups()
+
+    bold_text = string_to_tex(bold_text)
+    processed_text += bold_text
+    processed_text += R"}"
+    return (processed_text, unprocessed_text)
+
+
+def split_italics(text: str) -> Tuple[str, str]:
+    processed_text = R"\textit{"
+    italic_text, unprocessed_text = re.match(r"(.*?)\*(.*)", text).groups()
+
+    italic_text = string_to_tex(italic_text)
+    processed_text += italic_text
+    processed_text += R"}"
     return (processed_text, unprocessed_text)
 
 
