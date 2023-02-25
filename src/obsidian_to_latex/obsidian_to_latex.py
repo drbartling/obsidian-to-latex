@@ -85,6 +85,9 @@ def main(filename: Path, template: Optional[Path]):  # pragma: no cover
 def get_vault_root(path: Path) -> Path:  # pragma: no cover
     if (path / ".obsidian").exists():
         return path
+    if (path / ".git").exists():
+        logging.getLogger(__name__).info("Using .git for locating vault root")
+        return path
     if path.parent == path:
         raise FileNotFoundError("Unable to locate `.obsidian` folder")
     return get_vault_root(path.parent)

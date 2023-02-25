@@ -1,5 +1,8 @@
 # Obsidian to latex changelog
 
+### Changes
+1. Obsidian to latex will search for `.git` as well as `.obsidian` for the vault root.
+
 ## 0.1.5
 
 ### New Features
