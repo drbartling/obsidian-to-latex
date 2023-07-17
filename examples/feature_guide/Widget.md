@@ -22,3 +22,7 @@ graph
 
 ## Widgeting
 ![[Widgeting]]
+
+## Glossary
+![[definition]]
+![[glossary]]

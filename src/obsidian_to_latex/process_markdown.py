@@ -155,11 +155,15 @@ def embed_markdown(embed_line: str) -> str:
         if line.startswith("#"):
             lines[i] = "#" * (STATE.depth - 1) + line
     text = "\n".join(lines)
+
     STATE.file.append(file)
+    current_depth = STATE.depth
     try:
         result = obsidian_to_tex(text)
     finally:
         STATE.file.pop()
+        STATE.depth = current_depth
+
     return file_label(file) + result
 
 

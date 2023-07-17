@@ -485,6 +485,33 @@ embed_markdown_params = [
         "dolor sit",
     ),
     (
+        f"{file_line()} Second level header goes only one header level down from higher doc",
+        "![[Hello]]",
+        [
+            "# Hello\n## lorem ipsum\n![[World]]\n![[Bob]]",
+            "## World\ndolor sit\n",
+            "## Bob\ndolor sit\n",
+        ],
+        "\\label{file_embedded_document_md}\n"
+        "\\section{lorem ipsum}\n"
+        "\\label{file_embedded_document_md}\\subsection{World}\n"
+        "dolor sit\n"
+        "\\label{file_embedded_document_md}\\subsection{Bob}\n"
+        "dolor sit",
+    ),
+    (
+        f"{file_line()} Second level header goes one header level down",
+        "![[Hello]]",
+        [
+            "# Hello\n## lorem ipsum\n![[World]]\n",
+            "## World\ndolor sit\n",
+        ],
+        "\\label{file_embedded_document_md}\n"
+        "\\section{lorem ipsum}\n"
+        "\\label{file_embedded_document_md}\\subsection{World}\n"
+        "dolor sit",
+    ),
+    (
         f"{file_line()} Embedding images",
         "![[Hello]]",
         [
