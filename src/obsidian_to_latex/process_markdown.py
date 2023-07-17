@@ -456,10 +456,16 @@ def split_markdown_link(text: str) -> Tuple[str, str]:
 
 @pydantic.validate_arguments
 def split_document_link(text: str) -> Tuple[str, str]:
-    m = re.match(r"\[([a-zA-Z0-9-\s]+)\|?(.+)?\]\](.*)", text)
+    m = re.match(r"\[(.+?)\]\](.*)", text)
     if not m:
         return None
-    doc_name, disp_text, unprocessed_text = m.groups()
+    link_text, unprocessed_text = m.groups()
+
+    m = re.match(r"([a-zA-Z0-9-_\s]+)\|?(.+?)?", link_text)
+    if not m:
+        return None
+    doc_name, disp_text = m.groups()
+
     doc_ref = file_ref_label(obsidian_path.find_file(doc_name + ".md"))
     disp_text = (
         sanitize_special_characters(disp_text) if disp_text else doc_name

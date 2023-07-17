@@ -529,7 +529,16 @@ embed_markdown_params = [
             "lorem ipsum[[embedded_document]]\n",
             "dolar set",
         ],
-        "\\label{file_embedded_document_md}lorem ipsum\\hyperref[file_embedded_document_md]{\\_document}",
+        "\\label{file_embedded_document_md}lorem ipsum\\hyperref[file_embedded_document_md]{embedded_document}",
+    ),
+    (
+        f"{file_line()} Reference an embedded file again",
+        "![[Hello]]",
+        [
+            "lorem ipsum [[embedded_document]] [[embedded_document]]\n",
+            "dolar set",
+        ],
+        "\\label{file_embedded_document_md}lorem ipsum \\hyperref[file_embedded_document_md]{embedded_document} \\hyperref[file_embedded_document_md]{embedded_document}",
     ),
 ]
 

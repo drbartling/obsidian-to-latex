@@ -2,6 +2,8 @@
 
 Now with [[right widgeting]]!
 
+We also include a [[glossary]] with [[definition]]s!
+
 ## Section #1
 
 ### SubSection
